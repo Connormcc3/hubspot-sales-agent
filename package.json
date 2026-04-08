@@ -1,0 +1,13 @@
+{
+  "name": "hubspot-followup-email-agent",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Autonomous HubSpot follow-up email agent — Karpathy autoresearch pattern",
+  "scripts": {
+    "start":   "claude \"$(cat prompts/run-followup.md | head -20)\"",
+    "tracker": "node src/tracker.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
