@@ -21,14 +21,13 @@
  */
 
 import Database from 'better-sqlite3';
-import { readFileSync, existsSync, renameSync } from 'fs';
+import { readFileSync, existsSync, unlinkSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DB_PATH = resolve(__dirname, '../tracker.db');
 const LEGACY_TSV_PATH = resolve(__dirname, '../table.tsv');
-const REPO_ROOT = resolve(__dirname, '..');
 
 /**
  * Canonical column list — the single source of truth for the tracker schema.
@@ -88,6 +87,12 @@ db.exec(`
 runLegacyImportIfNeeded();
 
 // ---------------- Legacy TSV import (runs at most once per install) ----------------
+//
+// If a pre-v2.6 `table.tsv` exists alongside an empty DB, import the rows and
+// delete the TSV. v2.6.1: no rollback preservation — the project is still in
+// testing, there are no users to protect, and carrying a legacy-file safety
+// net just adds noise. If you ever need to roll back, checkout v2.5 and
+// re-run the agent from a clean state.
 
 function runLegacyImportIfNeeded(): void {
   const countRow = db.prepare('SELECT COUNT(*) as c FROM tracker').get() as { c: number };
@@ -100,12 +105,12 @@ function runLegacyImportIfNeeded(): void {
   const dataLines = lines.slice(1);
 
   if (dataLines.length === 0) {
-    // Header-only or empty file — still rename so we don't re-check every run.
-    const renamed = renameLegacyFile();
-    if (renamed) {
-      console.error(
-        `[tracker] Found empty table.tsv (header only). Renamed to ${renamed}.`,
-      );
+    // Header-only or empty file — just delete so we don't re-check every run.
+    try {
+      unlinkSync(LEGACY_TSV_PATH);
+      console.error('[tracker] Found empty table.tsv (header only). Deleted.');
+    } catch {
+      console.error('[tracker] Could not delete empty table.tsv. Remove it manually.');
     }
     return;
   }
@@ -132,32 +137,19 @@ function runLegacyImportIfNeeded(): void {
     importAll(parsedRows);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`[tracker] Import failed: ${message}. DB rolled back. Legacy file left in place.`);
-    // Don't rename on failure — lets the user retry.
+    console.error(`[tracker] Import failed: ${message}. DB rolled back. table.tsv left in place — fix the issue and retry.`);
     return;
   }
 
-  const renamed = renameLegacyFile();
-  if (renamed) {
-    console.error(
-      `[tracker] Imported ${parsedRows.length} rows from table.tsv → tracker.db. Legacy file renamed to ${renamed}.`,
-    );
-  } else {
-    console.error(
-      `[tracker] Imported ${parsedRows.length} rows from table.tsv → tracker.db. Warning: could not rename legacy file; delete it manually to prevent re-import attempts.`,
-    );
-  }
-}
-
-function renameLegacyFile(): string | null {
-  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const newName = `table.tsv.legacy-${ts}`;
-  const newPath = resolve(REPO_ROOT, newName);
   try {
-    renameSync(LEGACY_TSV_PATH, newPath);
-    return newName;
+    unlinkSync(LEGACY_TSV_PATH);
+    console.error(
+      `[tracker] Imported ${parsedRows.length} rows from table.tsv → tracker.db. table.tsv deleted.`,
+    );
   } catch {
-    return null;
+    console.error(
+      `[tracker] Imported ${parsedRows.length} rows from table.tsv → tracker.db. Warning: could not delete table.tsv; remove it manually to prevent re-import attempts.`,
+    );
   }
 }
 

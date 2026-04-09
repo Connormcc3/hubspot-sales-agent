@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.6.1] - 2026-04-10
+
+### Changed
+- **Migration now deletes `table.tsv` after import** instead of renaming it to `table.tsv.legacy-<timestamp>`. Rationale: pre-release, no users yet, no production data to protect with a rollback snapshot. The "keep the legacy file around for rollback" posture was dead weight.
+- `src/db.ts` simplified — `renameLegacyFile()` helper removed, replaced with a single `unlinkSync()` call at the end of successful import (and for the header-only empty-TSV case).
+- `.gitignore` — removed the `table.tsv.legacy-*` pattern. The `table.tsv` line stays for backwards compatibility with pre-v2.6 checkouts.
+- README project structure tree and "State files" section — removed the `table.tsv.legacy-*` entry and rollback prose.
+- SECURITY.md — removed legacy-file rollback mention.
+
+### Unchanged
+- Everything else from v2.6.0. CLI contract, schema, indexes, UI, all skills, all docs outside the four files above.
+
+### Rollback note
+If you ever need to roll back to a pre-v2.6 version, `git checkout <tag>` and re-run the agent from a clean state. The SQLite DB stays in place (gitignored) but will not be used by a pre-v2.6 tracker that reads `table.tsv`.
+
 ## [2.6.0] - 2026-04-10
 
 ### Changed

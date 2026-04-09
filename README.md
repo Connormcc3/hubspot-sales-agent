@@ -141,7 +141,6 @@ hubspot-sales-agent/
 │   ├── src/lib/                  # cli.ts execFile wrapper, skills templates, types
 │   └── package.json              # Separate install — see "Dashboard UI" section below
 ├── tracker.db                    # Single source of truth (SQLite, gitignored) — as of v2.6
-├── table.tsv.legacy-*            # One-time snapshot of the pre-v2.6 TSV tracker (kept for rollback, gitignored)
 ├── .env.example                  # Credential template
 ├── package.json
 └── README.md                     # You are here
@@ -417,7 +416,7 @@ Neither mode sends emails or touches state directly. Both paths end with you rev
 
 The agent has two state files — both living in the repo, both are single sources of truth for their concern:
 
-1. **`tracker.db`** — per-contact tracker (SQLite, 13 columns). Every draft, skip, error, reply classification lives here. Used by every skill for deduplication and reply tracking. Written via `src/tracker.ts` (thin CLI over `src/db.ts`), queried by `src/performance.ts` via an indexed range scan on `drafted_at`. **As of v2.6:** backed by SQLite (`better-sqlite3`) — fixes field escaping (tabs/newlines no longer corrupt rows), concurrency (WAL mode), and scales to tens of thousands of rows. Pre-v2.6 was a flat `table.tsv` file; on first v2.6 run, the TSV is imported into SQLite and renamed to `table.tsv.legacy-<timestamp>` for rollback. Dump the current state to TSV or JSON on demand via `npx tsx src/tracker.ts export`.
+1. **`tracker.db`** — per-contact tracker (SQLite, 13 columns). Every draft, skip, error, reply classification lives here. Used by every skill for deduplication and reply tracking. Written via `src/tracker.ts` (thin CLI over `src/db.ts`), queried by `src/performance.ts` via an indexed range scan on `drafted_at`. **As of v2.6:** backed by SQLite (`better-sqlite3`) — fixes field escaping (tabs/newlines no longer corrupt rows), concurrency (WAL mode), and scales to tens of thousands of rows. Pre-v2.6 was a flat `table.tsv` file; on first v2.6+ run, any existing `table.tsv` is imported into SQLite and then deleted. Dump the current state to TSV or JSON on demand via `npx tsx src/tracker.ts export`.
 2. **`knowledge/learnings.md`** — living memory (3 sections). Cheat sheets, running log, distilled patterns. Read by every skill at start, written via `src/learnings.ts` at end. See the "Learnings memory" section above.
 
 Weekly performance reports land in **`output/performance/<date>.md`** — written by `performance-review`, human reviews them to decide which Section C rules to promote.
