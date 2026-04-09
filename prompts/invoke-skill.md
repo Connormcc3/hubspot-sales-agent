@@ -1,6 +1,6 @@
 # Sales Agent — Skill Invocation
 
-> Overview of all 6 skills + how to invoke them. Each block is self-contained — copy-paste into your agent harness.
+> Overview of all 7 skills + how to invoke them. Each block is self-contained — copy-paste into your agent harness.
 >
 > **Before every invocation:** You should have `README.md` and `CLAUDE.md` loaded (or the agent reads them at the start of each skill run).
 
@@ -256,7 +256,58 @@ Show me:
 
 ---
 
-## Skill 6: compose-reply
+## Skill 6: performance-review
+
+### Default weekly run (last 7 days)
+
+```
+Read skills/performance-review.md, program.md, and knowledge/learnings.md.
+Run the skill with the default 7-day window.
+
+1. Run npx tsx src/performance.ts --window 7 and interpret the JSON
+2. For each proposable contrast, fetch 2-3 draft bodies from Gmail to extract
+   subject + tone
+3. Write the full report to output/performance/<YYYY-MM-DD>.md with:
+   - Headline metrics
+   - Segment breakdowns (by lead_status, by skill, by lead_status × skill)
+   - Contrasts (≥5 in each bucket, ≥15pp delta)
+   - Proposed Section C additions (ready-to-copy markdown blocks for each
+     contrast with ≥10 evidence)
+   - Data warnings + correlation-not-causation caveat
+4. Print console summary with headline numbers + top 3 contrasts
+5. Append learnings heartbeat (or observation if a rule was proposed)
+
+DO NOT auto-write proposed rules to learnings.md Section C — human confirms.
+DO NOT lower the minimum-sample thresholds.
+```
+
+### Custom window
+
+```
+Read skills/performance-review.md and program.md.
+Run with window: <N> days (e.g., 14 for bi-weekly, 30 for monthly review).
+
+npx tsx src/performance.ts --window <N>
+
+Otherwise same as default: report to output/performance/<date>.md, propose
+Section C rules, append learnings entry.
+```
+
+### Skill-specific review (single drafting skill)
+
+```
+Read skills/performance-review.md and program.md.
+Run the default window but focus the report on ONE skill:
+- Skill: <follow-up-loop | research-outreach | compose-reply>
+
+Fetch the full performance.ts JSON, filter contrasts to those involving the
+specified skill, and concentrate the report on that skill's outcomes.
+Still propose Section C rules only for contrasts with ≥10 evidence.
+```
+
+---
+
+## Skill 7: compose-reply
 
 ### Full Deep-Context Reply
 

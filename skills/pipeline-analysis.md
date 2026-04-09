@@ -1,6 +1,6 @@
 # Skill: pipeline-analysis
 
-> **Architecture:** One of 6 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 7 skills in the Sales Agent. See `README.md` for the overview.
 > **Related skills:** This skill is the "zoom out" — it analyzes the whole HubSpot pipeline and recommends which action-skills to run next (`follow-up-loop`, `research-outreach`, `lead-recovery`).
 
 ---

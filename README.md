@@ -24,18 +24,19 @@ The agent is **branche-agnostic** (works for any industry) and **harness-agnosti
 
 ---
 
-## Six Composable Skills
+## Seven Composable Skills
 
 | Skill | What It Does |
 |-------|-------------|
-| **pipeline-analysis** | Analyzes the entire HubSpot pipeline — contacts, deals, segments, agent coverage — and recommends which action-skill to run next |
+| **pipeline-analysis** | Analyzes the entire HubSpot pipeline — contacts, deals, segments, agent coverage — and recommends which action-skill to run next (forward-looking) |
+| **performance-review** | Closes the feedback loop. Joins tracker drafts with reply outcomes, computes per-segment conversion contrasts, proposes evidence-backed Section C rules for `learnings.md` (backward-looking) |
 | **follow-up-loop** | Autonomous bulk outreach to HubSpot contacts — drafts personalized follow-ups until stopped |
 | **inbox-classifier** | Reads incoming replies, classifies them into 8 categories, drafts responses to positive replies, and syncs HubSpot status |
 | **research-outreach** | Researches a lead's website/business using a configurable audit type, embeds top findings in a personalized email |
 | **lead-recovery** | Decision framework for stale/burned-out deals — recommends recovery levers or pipeline cleanup |
 | **compose-reply** | Deep-context single-lead composer — assembles full email history + HubSpot data + custom new context and drafts a careful reply for one specific lead |
 
-Each skill is self-contained. Invoke them independently or combine them in workflows. **Start with `pipeline-analysis`** to understand your workspace and decide where to focus.
+Each skill is self-contained. Invoke them independently or combine them in workflows. **Monday-morning pair:** run `performance-review` first (what worked last week), then `pipeline-analysis` (what to work on next). The rest of the week runs the action skills the analysis recommended.
 
 ---
 
@@ -52,13 +53,14 @@ flowchart TB
         Knowledge["knowledge/\n(learnings + research config)"]
     end
 
-    subgraph Skills["6 Skills"]
+    subgraph Skills["7 Skills"]
         Skill0["skills/pipeline-analysis.md"]
-        Skill1["skills/follow-up-loop.md"]
-        Skill2["skills/inbox-classifier.md"]
-        Skill3["skills/research-outreach.md"]
-        Skill4["skills/lead-recovery.md"]
-        Skill5["skills/compose-reply.md"]
+        Skill1["skills/performance-review.md"]
+        Skill2["skills/follow-up-loop.md"]
+        Skill3["skills/inbox-classifier.md"]
+        Skill4["skills/research-outreach.md"]
+        Skill5["skills/lead-recovery.md"]
+        Skill6["skills/compose-reply.md"]
     end
 
     subgraph Tools["Tool Paths (pick one)"]
@@ -102,8 +104,9 @@ hubspot-sales-agent/
 ├── program.md                    # Shared constraints, setup, error handling
 ├── CLAUDE.md                     # Shared email generation rules (greeting, tone, templates)
 ├── AGENTS.md                     # Harness compatibility guide
-├── skills/                       # 6 composable skills
-│   ├── pipeline-analysis.md      # Full pipeline health check + recommendations
+├── skills/                       # 7 composable skills
+│   ├── pipeline-analysis.md      # Full pipeline health check + recommendations (forward-looking)
+│   ├── performance-review.md     # Closes the feedback loop — joins drafts with outcomes, proposes Section C rules (backward-looking)
 │   ├── follow-up-loop.md         # Bulk outreach autonomous loop
 │   ├── inbox-classifier.md       # 8-category reply classification + auto-drafts
 │   ├── research-outreach.md      # Research-driven personalized outreach
@@ -119,6 +122,7 @@ hubspot-sales-agent/
 ├── src/
 │   ├── tracker.ts                # TSV tracker CLI (read/exists/append/update)
 │   ├── learnings.ts              # Learnings CLI (append heartbeat/observation to learnings.md Section B)
+│   ├── performance.ts            # Performance math (reads table.tsv, computes per-segment contrasts → JSON for performance-review)
 │   └── tools/                    # Harness-agnostic CLI wrappers
 │       ├── hubspot.ts            # HubSpot REST API
 │       ├── gmail.ts              # Gmail API (OAuth)
@@ -126,6 +130,7 @@ hubspot-sales-agent/
 ├── output/
 │   ├── research-reports/         # Full research reports per lead (markdown)
 │   ├── analysis/                 # Pipeline analysis reports
+│   ├── performance/              # Weekly performance-review reports
 │   ├── lead-dossiers/            # Deep-context briefs from compose-reply
 │   ├── errors.log                # Runtime error log
 │   └── recovery-*.md             # Lead recovery analysis outputs
@@ -202,6 +207,7 @@ npx tsx src/tools/gmail.ts --help     # should print usage
 npx tsx src/tools/webfetch.ts --help  # should print usage
 npx tsx src/tracker.ts read           # should print []
 npx tsx src/learnings.ts --help       # should print usage
+npx tsx src/performance.ts --window 7 # should print JSON with zero counts on an empty tracker
 npx tsc --noEmit                      # TypeScript type check, should exit 0
 ```
 
@@ -242,6 +248,8 @@ The agent has a living memory at `knowledge/learnings.md` that every skill reads
 Every skill run ends with exactly one automated entry — usually a `heartbeat` (one-line run summary) or, if a genuine pattern was seen, an `observation` (quantified finding + rule for next time). `compose-reply` is the one exception — it writes observations only, never heartbeats.
 
 You don't need to do anything to enable this — it's part of the universal skill contract in `program.md`. You only maintain Section A (your cheat sheets) and periodically promote Section B entries to Section C patterns.
+
+**The feedback loop is closed weekly by `performance-review`.** That skill joins `table.tsv` drafts with reply outcomes, computes per-segment conversion contrasts (with conservative minimum-sample thresholds so tiny samples don't produce noise), and **proposes exact markdown blocks** for Section C with evidence: *"CONNECTED × research-outreach converted at 50% (n=6) vs 10% (n=10) for other skills — delta 40pp, proposable."* You copy-paste the blocks you agree with into Section C manually. The skill never auto-writes rules.
 
 ---
 
@@ -348,8 +356,10 @@ See [`prompts/invoke-skill.md`](prompts/invoke-skill.md) for all invocations, mo
 
 The agent has two state files — both living in the repo, both are single sources of truth for their concern:
 
-1. **`table.tsv`** — per-contact tracker (13 columns). Every draft, skip, error, reply classification lives here. Used by every skill for deduplication and reply tracking. Written via `src/tracker.ts`.
+1. **`table.tsv`** — per-contact tracker (13 columns). Every draft, skip, error, reply classification lives here. Used by every skill for deduplication and reply tracking. Written via `src/tracker.ts`. **Read by `src/performance.ts`** for weekly performance-review analysis.
 2. **`knowledge/learnings.md`** — living memory (3 sections). Cheat sheets, running log, distilled patterns. Read by every skill at start, written via `src/learnings.ts` at end. See the "Learnings memory" section above.
+
+Weekly performance reports land in **`output/performance/<date>.md`** — written by `performance-review`, human reviews them to decide which Section C rules to promote.
 
 ### table.tsv columns (13 total)
 
@@ -392,12 +402,16 @@ Entries land in `knowledge/learnings.md` Section B (newest first). When Section 
 
 ```
 Monday morning:
-1. Run pipeline-analysis → get full report + recommended actions
-2. Pick top 1-2 actions for the week
-3. Run the recommended skills (follow-up-loop / research-outreach / lead-recovery)
-4. Human reviews drafts and sends
-5. Run inbox-classifier daily through the week
+1. Run performance-review → last week's numbers + proposed Section C rules
+2. Human promotes any proposed rules to knowledge/learnings.md Section C
+3. Run pipeline-analysis → full report + recommended actions
+4. Pick top 1-2 actions for the week
+5. Run the recommended skills (follow-up-loop / research-outreach / lead-recovery)
+6. Human reviews drafts and sends
+7. Run inbox-classifier daily through the week
 ```
+
+The `performance-review` → `pipeline-analysis` pair closes the loop: backward-looking (what worked) informs forward-looking (what to do next).
 
 ### Workflow B — Send Wave + Follow Up
 

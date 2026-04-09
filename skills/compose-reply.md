@@ -1,6 +1,6 @@
 # Skill: compose-reply
 
-> **Architecture:** One of 6 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 7 skills in the Sales Agent. See `README.md` for the overview.
 > **Shared rules:** `CLAUDE.md` (greeting, tone, templates, signatures).
 > **Related skills:** `inbox-classifier` handles bulk reply classification. This skill is for the ONE lead where you need full context and careful composition.
 

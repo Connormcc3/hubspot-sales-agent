@@ -14,12 +14,14 @@ output/research-reports/*.md
 output/recovery-*.md
 output/analysis/*.md
 output/lead-dossiers/*.md
+output/performance/*.md
 
 # Keep directory structure
 !output/.gitkeep
 !output/research-reports/.gitkeep
 !output/analysis/.gitkeep
 !output/lead-dossiers/.gitkeep
+!output/performance/.gitkeep
 
 # Editor
 .DS_Store

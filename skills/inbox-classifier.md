@@ -1,6 +1,6 @@
 # Skill: inbox-classifier
 
-> **Architecture:** One of 6 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 7 skills in the Sales Agent. See `README.md` for the overview.
 > **Shared rules:** `CLAUDE.md` (reply templates follow the same greeting/tone rules).
 > **Related:** Reads lessons from `knowledge/learnings.md`.
 

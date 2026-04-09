@@ -1,6 +1,6 @@
 # Skill: follow-up-loop
 
-> **Architecture:** One of 6 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 7 skills in the Sales Agent. See `README.md` for the overview.
 > **Shared rules:** `CLAUDE.md` (greeting, tone, templates, signatures).
 
 ---

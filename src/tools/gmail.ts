@@ -8,6 +8,7 @@
  * Usage:
  *   tsx src/tools/gmail.ts draft create --to <email> --subject "<s>" --body "<b>" [--content-type text/plain|text/html]
  *   tsx src/tools/gmail.ts draft list [--query "<q>"]
+ *   tsx src/tools/gmail.ts draft read --id <draftId>
  *   tsx src/tools/gmail.ts inbox search --query "newer_than:7d in:inbox"
  *   tsx src/tools/gmail.ts thread read --id <threadId>
  *   tsx src/tools/gmail.ts message read --id <messageId>
@@ -162,6 +163,16 @@ async function draftList(opts: ParsedArgs): Promise<void> {
   console.log(JSON.stringify(data, null, 2));
 }
 
+async function draftRead(opts: ParsedArgs): Promise<void> {
+  const id = getString(opts, 'id');
+  if (!id) {
+    console.error('Missing --id');
+    process.exit(1);
+  }
+  const data = await gmailRequest('GET', `/drafts/${id}?format=full`);
+  console.log(JSON.stringify(data, null, 2));
+}
+
 async function inboxSearch(opts: ParsedArgs): Promise<void> {
   const query = getString(opts, 'query');
   if (!query) {
@@ -200,13 +211,14 @@ if (!resource || resource === '--help') {
   console.log(`Usage: tsx src/tools/gmail.ts <resource> <action> [options]
 
 Resources:
-  draft   create | list
+  draft   create | list | read
   inbox   search
   thread  read
   message read
 
 Examples:
   tsx src/tools/gmail.ts draft create --to foo@bar.com --subject "Hi" --body "Hello"
+  tsx src/tools/gmail.ts draft read --id <draftId>
   tsx src/tools/gmail.ts inbox search --query "newer_than:7d in:inbox"
   tsx src/tools/gmail.ts thread read --id <threadId>
 
@@ -218,6 +230,7 @@ See README.md for OAuth setup.`);
 const routes: Record<string, Handler> = {
   'draft:create': draftCreate,
   'draft:list': draftList,
+  'draft:read': draftRead,
   'inbox:search': inboxSearch,
   'thread:read': threadRead,
   'message:read': messageRead,

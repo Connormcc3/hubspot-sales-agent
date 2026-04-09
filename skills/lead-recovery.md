@@ -1,6 +1,6 @@
 # Skill: lead-recovery
 
-> **Architecture:** One of 6 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 7 skills in the Sales Agent. See `README.md` for the overview.
 > **Related skill:** `research-outreach.md` handles the actual value-first outreach — this skill only provides the decision framework + lead selection.
 
 ---

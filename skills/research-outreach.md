@@ -1,6 +1,6 @@
 # Skill: research-outreach
 
-> **Architecture:** One of 6 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 7 skills in the Sales Agent. See `README.md` for the overview.
 > **Shared rules:** `CLAUDE.md` (greeting, tone, signatures).
 > **Configuration:** Your research approach is defined in `knowledge/research-config.md`.
 > **Related skill:** `lead-recovery.md` provides the lead list, this skill executes the outreach.

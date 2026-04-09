@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.0] - 2026-04-09
+
+### Added
+- **`performance-review` skill** (7th skill) — closes the feedback loop between outcomes and drafting decisions. Joins `table.tsv` drafts with their reply outcomes, computes per-segment conversion contrasts with conservative minimum-sample thresholds, produces a weekly report, and proposes exact copy-paste markdown blocks for `learnings.md` Section C. **Does not auto-write Section C** — human review stays in the loop.
+- **`src/performance.ts`** — deterministic math helper. Reads `table.tsv`, filters to a review window (default 7 days), computes totals, per-`lead_status` and per-`skill` breakdowns, `lead_status × skill` cross, and contrasts (≥5 per bucket, ≥15pp delta, flagged "proposable" at ≥10 total evidence). Emits structured JSON for the skill agent to interpret.
+- **`gmail.ts draft:read`** — new command `draft read --id <draftId>` wrapping `GET /drafts/{id}?format=full`. Enables `performance-review` to fetch actual draft bodies for tone/subject-line extraction (data that isn't in the tracker).
+- **Monday-morning workflow pair:** run `performance-review` first (what worked last week) → `pipeline-analysis` (what to work on next). Closes the loop between backward-looking evaluation and forward-looking planning.
+- New `output/performance/` directory for weekly reports (gitignored by default).
+- `performance` npm script (`tsx src/performance.ts`).
+
+### Changed
+- Skill count: 6 → 7
+- README: "Six Composable Skills" → "Seven Composable Skills"; added performance-review row to the skill table; added Mermaid diagram node; updated project structure tree; added feedback-loop explanation to the Learnings memory section; inserted performance-review into Workflow A (Weekly Planning)
+- `program.md`: added performance-review to Available Skills table and Stopping Criteria
+- `prompts/invoke-skill.md`: new "Skill 6: performance-review" section with 3 invocation modes (default weekly, custom window, skill-specific review); existing compose-reply renumbered to Skill 7
+
+### Thresholds (locked; non-negotiable in the skill)
+- `MIN_BUCKET_SIZE = 5` — buckets smaller than this are skipped
+- `MIN_DELTA = 0.15` — positive-rate delta threshold
+- `PROPOSABLE_EVIDENCE = 10` — bucket + other must reach this to flag a contrast as proposable
+- Set in `src/performance.ts`; documented in `skills/performance-review.md` as non-negotiable without explicit human edit
+
 ## [2.3.0] - 2026-04-09
 
 ### Added
