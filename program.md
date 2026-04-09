@@ -17,6 +17,7 @@ Automate the outbound sales flow:
 
 | Skill | File | Purpose |
 |-------|------|---------|
+| **pipeline-analysis** | `skills/pipeline-analysis.md` | Full pipeline health check + recommendations (start here) |
 | **follow-up-loop** | `skills/follow-up-loop.md` | Bulk outreach to HubSpot contacts |
 | **inbox-classifier** | `skills/inbox-classifier.md` | Classify replies + auto-draft responses |
 | **research-outreach** | `skills/research-outreach.md` | Research-driven personalized outreach (configurable audit type) |
@@ -71,6 +72,7 @@ Pick whichever matches your setup. You can also mix both paths (e.g., MCP for Hu
 ## Stopping Criteria
 
 Each skill defines its own stopping rules:
+- **pipeline-analysis:** ONE-SHOT — analyze the workspace, write report, then STOP
 - **follow-up-loop:** NEVER STOP until manually interrupted
 - **inbox-classifier:** ONE-SHOT — process all new replies, then STOP
 - **research-outreach:** Process the given lead list, then STOP

@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2026-04-09
+
+### Added
+- **`pipeline-analysis` skill** — "zoom out" analysis of the entire HubSpot pipeline. Surfaces contact distribution, deal health, agent coverage, segment insights, and recommends which action-skill to run next. Start here on Monday mornings to plan the week.
+- New Workflow A — "Weekly Planning" using pipeline-analysis as the entry point
+- New `output/analysis/` directory for pipeline reports (gitignored by default)
+
+### Changed
+- Skill count: 4 → 5
+- README reframed: pipeline-analysis is the recommended starting point
+- Mermaid architecture diagram updated to show 5 skills
+- Workflow examples reordered (Weekly Planning first)
+
 ## [2.0.0] - 2026-04-08
 
 ### Renamed

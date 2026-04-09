@@ -1,6 +1,6 @@
 {
   "name": "hubspot-sales-agent",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "type": "module",
   "description": "Autonomous sales agent — bulk outreach, inbox classification, research-driven personalization, lead recovery. HubSpot + Gmail. Runs on any local agent harness.",
   "scripts": {

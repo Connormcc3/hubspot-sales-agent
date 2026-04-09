@@ -194,6 +194,68 @@ Do NOT change anything in HubSpot without my confirmation.
 
 ---
 
+## Skill 5: pipeline-analysis
+
+### Full Pipeline Health Check
+
+```
+Read skills/pipeline-analysis.md and CLAUDE.md.
+Analyze the entire HubSpot pipeline.
+
+1. Fetch ALL contacts (paginate through all pages)
+2. Fetch ALL deals (paginate through all pages)
+3. Cross-reference with table.tsv for agent coverage
+4. Generate the 5-section analysis:
+   - Contact distribution (by lead_status, industry, cohort)
+   - Deal health (open/won/lost, win rate, stale, zombie)
+   - Agent coverage (touched vs untouched, reply stats)
+   - Segment insights (top converting industries, dead segments)
+   - Recommended actions (which skill to run next)
+
+Output:
+- Console summary with key metrics
+- Full report to output/analysis/pipeline-<YYYY-MM-DD>.md
+- Ranked list of recommended next actions
+
+Do NOT change any HubSpot data. Do NOT create drafts. Analysis only.
+```
+
+### Quick Health Check (no full report)
+
+```
+Read skills/pipeline-analysis.md.
+
+Quick pipeline check — console output only, no markdown report.
+Show me:
+- Total contacts / by lead_status
+- Total deals / open / won / lost / win rate
+- Stale deals (>90d no activity) count + value
+- Zombie deals (>2y open) count + value
+- Agent coverage percentage
+- Top 3 recommended actions
+
+Fast summary — no detailed section breakdowns.
+```
+
+### Segment Deep-Dive
+
+```
+Read skills/pipeline-analysis.md.
+
+Analyze ONE specific segment of the pipeline:
+Segment: <industry name OR lead_status OR lead_source>
+
+Show me:
+- How many contacts / deals in this segment
+- Win rate vs average
+- Average deal value vs average
+- Agent coverage in this segment
+- Sample of untouched contacts (max 10)
+- Recommended action specific to this segment
+```
+
+---
+
 ## Workflow Examples
 
 ### Workflow A: Send wave + follow up
@@ -221,4 +283,15 @@ Do NOT change anything in HubSpot without my confirmation.
 ```
 1. Run inbox-classifier with "newer_than:1d"
 2. Human reviews reply drafts (5 min) and sends
+```
+
+### Workflow D: Weekly planning
+
+```
+1. Monday morning: run pipeline-analysis → full report
+2. Read the recommended actions section
+3. Pick top 1-2 actions for the week
+4. Run the recommended skills (follow-up-loop / research-outreach / lead-recovery)
+5. Human reviews drafts and sends
+6. Run inbox-classifier daily through the week
 ```

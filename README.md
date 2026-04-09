@@ -24,16 +24,17 @@ The agent is **branche-agnostic** (works for any industry) and **harness-agnosti
 
 ---
 
-## Four Composable Skills
+## Five Composable Skills
 
 | Skill | What It Does |
 |-------|-------------|
+| **pipeline-analysis** | Analyzes the entire HubSpot pipeline — contacts, deals, segments, agent coverage — and recommends which action-skill to run next |
 | **follow-up-loop** | Autonomous bulk outreach to HubSpot contacts — drafts personalized follow-ups until stopped |
 | **inbox-classifier** | Reads incoming replies, classifies them into 8 categories, drafts responses to positive replies, and syncs HubSpot status |
 | **research-outreach** | Researches a lead's website/business using a configurable audit type, embeds top findings in a personalized email |
 | **lead-recovery** | Decision framework for stale/burned-out deals — recommends recovery levers or pipeline cleanup |
 
-Each skill is self-contained. Invoke them independently or combine them in workflows.
+Each skill is self-contained. Invoke them independently or combine them in workflows. **Start with `pipeline-analysis`** to understand your workspace and decide where to focus.
 
 ---
 
@@ -50,7 +51,8 @@ flowchart TB
         Knowledge["knowledge/\n(learnings + research config)"]
     end
 
-    subgraph Skills["4 Skills"]
+    subgraph Skills["5 Skills"]
+        Skill0["skills/pipeline-analysis.md"]
         Skill1["skills/follow-up-loop.md"]
         Skill2["skills/inbox-classifier.md"]
         Skill3["skills/research-outreach.md"]
@@ -98,7 +100,8 @@ hubspot-sales-agent/
 ├── program.md                    # Shared constraints, setup, error handling
 ├── CLAUDE.md                     # Shared email generation rules (greeting, tone, templates)
 ├── AGENTS.md                     # Harness compatibility guide
-├── skills/                       # 4 composable skills
+├── skills/                       # 5 composable skills
+│   ├── pipeline-analysis.md      # Full pipeline health check + recommendations
 │   ├── follow-up-loop.md         # Bulk outreach autonomous loop
 │   ├── inbox-classifier.md       # 8-category reply classification + auto-drafts
 │   ├── research-outreach.md      # Research-driven personalized outreach
@@ -117,6 +120,7 @@ hubspot-sales-agent/
 │       └── webfetch.js           # HTML fetch + basic audit
 ├── output/
 │   ├── research-reports/         # Full research reports per lead (markdown)
+│   ├── analysis/                 # Pipeline analysis reports
 │   ├── errors.log                # Runtime error log
 │   └── recovery-*.md             # Lead recovery analysis outputs
 ├── table.tsv                     # Single source of truth (13 columns, gitignored)
@@ -227,14 +231,32 @@ As you run outreach waves, document what works in this file. The agent reads it 
 
 ## Usage
 
-### Quickstart: Run the follow-up loop
+### Quickstart: Analyze your pipeline first
+
+Start with `pipeline-analysis` to understand your workspace before running any action-skill.
+
+```
+Read skills/pipeline-analysis.md and CLAUDE.md.
+Analyze the entire HubSpot pipeline:
+- Contact distribution by lead status and industry
+- Deal health (open/won/lost, win rate, stale, zombie)
+- Agent coverage (which contacts has the agent already touched?)
+- Top recommended actions
+
+Output: console summary + full report to output/analysis/pipeline-<date>.md.
+Do NOT change any HubSpot data. Analysis only.
+```
+
+The agent will tell you which action-skill to run next based on what it finds.
+
+### Run the follow-up loop
 
 ```
 Read skills/follow-up-loop.md and CLAUDE.md, then start the autonomous loop.
 NEVER STOP. Work through all HubSpot contacts until manually interrupted.
 ```
 
-Paste this into your agent harness (Claude Code, Aider, etc.). The agent will:
+Paste this into your agent harness. The agent will:
 1. Fetch contacts from HubSpot
 2. Read each contact's notes
 3. Generate a personalized email
@@ -313,7 +335,18 @@ node src/tracker.js update <email> <classification> [draft_id]    # set reply fi
 
 ## Workflow Examples
 
-### Workflow A — Send Wave + Follow Up
+### Workflow A — Weekly Planning (recommended starting point)
+
+```
+Monday morning:
+1. Run pipeline-analysis → get full report + recommended actions
+2. Pick top 1-2 actions for the week
+3. Run the recommended skills (follow-up-loop / research-outreach / lead-recovery)
+4. Human reviews drafts and sends
+5. Run inbox-classifier daily through the week
+```
+
+### Workflow B — Send Wave + Follow Up
 
 ```
 Day 0: Run follow-up-loop autonomously → 50-100 drafts in Gmail
@@ -322,7 +355,7 @@ Day 1-2: Run inbox-classifier with "newer_than:2d"
 Day 2: Human reviews reply drafts and sends
 ```
 
-### Workflow B — Pipeline Recovery
+### Workflow C — Pipeline Recovery
 
 ```
 1. Run lead-recovery for stale deals → recommendation per deal
@@ -332,7 +365,7 @@ Day 2: Human reviews reply drafts and sends
 5. Run inbox-classifier 1-2 days later
 ```
 
-### Workflow C — Daily Inbox Maintenance
+### Workflow D — Daily Inbox Maintenance
 
 ```
 Morning: Run inbox-classifier with "newer_than:1d"
