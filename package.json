@@ -1,13 +1,32 @@
 {
-  "name": "hubspot-followup-email-agent",
-  "version": "1.0.0",
+  "name": "hubspot-sales-agent",
+  "version": "2.0.0",
   "type": "module",
-  "description": "Autonomous HubSpot follow-up email agent — Karpathy autoresearch pattern",
+  "description": "Autonomous sales agent — bulk outreach, inbox classification, research-driven personalization, lead recovery. HubSpot + Gmail. Runs on any local agent harness.",
   "scripts": {
-    "start":   "claude \"$(cat prompts/run-followup.md | head -20)\"",
-    "tracker": "node src/tracker.js"
+    "tracker": "node src/tracker.js",
+    "hubspot": "node src/tools/hubspot.js",
+    "gmail": "node src/tools/gmail.js",
+    "webfetch": "node src/tools/webfetch.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
   },
   "engines": {
     "node": ">=18"
-  }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Dominien/hubspot-sales-agent.git"
+  },
+  "keywords": [
+    "hubspot",
+    "gmail",
+    "sales-automation",
+    "ai-agent",
+    "crm",
+    "inbox-classifier",
+    "lead-recovery"
+  ]
 }

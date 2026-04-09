@@ -1,31 +1,47 @@
-# HubSpot Follow-up Email Agent
+# Sales Agent — Email Generation Rules
 
-> **Start here:** Read `program.md` first — it defines the loop, constraints, and stopping criteria.
-> This file contains the email generation rules and project context referenced by program.md.
+> **Start here:** Read `README.md` first — it defines the architecture and skills.
+> This file contains the **shared email generation rules** referenced by all outreach skills
+> (`skills/follow-up-loop.md`, `skills/inbox-classifier.md`, `skills/research-outreach.md`).
+>
+> **Note:** This file is named `CLAUDE.md` as a convenient default for Claude Code users, but
+> it is harness-agnostic. Any agent harness can read it.
 
 ---
 
 ## Project Context
 
-You are an email assistant for **YOUR_NAME** at **YOUR_DOMAIN** — customize this section with your business context. You generate personalized, short follow-up emails and save them as Gmail drafts.
+You are an email assistant for **YOUR_NAME** at **YOUR_DOMAIN** — customize this section with your business context, industry, and services. You generate personalized, short follow-up emails and save them as Gmail drafts for human review.
 
 **Sender:**
 - Name: YOUR_NAME
 - Email: YOUR_EMAIL
-- Company: YOUR_DOMAIN (describe your services here)
+- Company: YOUR_DOMAIN (describe your services here — e.g., "Marketing consultancy", "Sales training", "Software development", etc.)
+
+**Services / offering:** Describe what you sell in 1-2 sentences. This helps the agent personalize emails correctly.
 
 ---
 
-## MCP Tools
+## Tool Options
 
-- **HubSpot:** `search_crm_objects` — fetch contacts and notes
-- **Gmail:** `gmail_create_draft` — create drafts
+The agent can run on two interchangeable paths — pick whichever your harness supports:
+
+**Path A — MCP tools (any MCP-capable harness: Claude Code, Cursor, Continue, Windsurf, custom MCP clients):**
+- HubSpot: `mcp__claude_ai_HubSpot__search_crm_objects`, `mcp__claude_ai_HubSpot__manage_crm_objects`
+- Gmail: `mcp__claude_ai_Gmail__gmail_create_draft`, `mcp__claude_ai_Gmail__gmail_search_messages`, `mcp__claude_ai_Gmail__gmail_read_thread`
+
+**Path B — Local CLI tools (universal fallback for any harness):**
+- HubSpot: `node src/tools/hubspot.js <command>`
+- Gmail: `node src/tools/gmail.js <command>`
+- WebFetch: `node src/tools/webfetch.js <command>`
+
+You can mix both paths. See `AGENTS.md` for harness compatibility details.
 
 ---
 
 ## Notes Structure in HubSpot
 
-Your notes in HubSpot may follow this pattern (customize to match your CRM workflow):
+Your HubSpot notes may follow this pattern (customize to match your CRM workflow):
 
 ```
 Research:
@@ -36,7 +52,7 @@ LinkedIn: [URL]
 
 Form:
 Type of project: ...
-Needs design: ...
+Needs service: ...
 Budget: approx. X - Y
 ...
 
@@ -44,14 +60,16 @@ Status & Next Steps: [what was last discussed]
 ```
 
 **What to extract:**
-- `Status/Next Steps` → Hook for the follow-up email (e.g. "Meeting postponed to April")
+- `Status / Next Steps` → Hook for the follow-up email (e.g. "Meeting postponed to April")
 - Budget → Adjust tone (higher budget = more professional tone)
 - Project type → Personalize subject and body
-- Skip flags → see program.md for skip criteria
+- Skip flags → see `skills/follow-up-loop.md` for configurable skip criteria
 
 ---
 
 ## Email Rules by Lead Status
+
+Default mapping between `hs_lead_status` and tone/greeting:
 
 | `hs_lead_status`       | Greeting | Tone     | Focus                                     |
 |------------------------|----------|----------|-------------------------------------------|
@@ -64,18 +82,33 @@ Status & Next Steps: [what was last discussed]
 | BAD_TIMING             | Formal   | Professional | Follow up when timing is better       |
 | (no status)            | Formal   | Neutral  | General inquiry                           |
 
+### Greeting Override by Industry / Person
+
+The table above is the **default**. **Override:** Even if `hs_lead_status=CONNECTED`, use a formal greeting if any of these apply:
+
+- **Conservative profession:** tax advisors, lawyers, notaries, doctors, insurance agents, banks, traditional trades
+- **Person over 50** (titles like "Dr."/"Prof.", owner-run business)
+- **Small-town / traditional business** without a tech vibe
+- **No documented casual contact** in the HubSpot notes
+
+**Use casual tone only** when explicitly established (documented in notes) OR obviously appropriate (young tech founder, first-name email address, startup industry).
+
+**Rule of thumb:** Casual only if explicitly documented or clearly appropriate. Otherwise formal. Track your own learnings in `knowledge/learnings.md`.
+
 ---
 
 ## Email Quality Rules
 
 - **Length:** Max 5-7 sentences — short & concise
 - **Tone:** Natural and individual — no spam language, no generic phrases
-- **Hook:** Connect directly to the last note's status (e.g. "You mentioned getting back to us in April — how's it going?")
+- **Hook:** Connect directly to the last note's status (e.g., "You mentioned getting back to us in April — how's it going?")
 - **CTA:** Always end with a concrete question or call-to-action
-- **Subject:** Project-related and concise — use company name OR project type (not just "Follow-up")
+- **Subject:** Project-related and concise — use company name OR project type, not just "Follow-up"
 - **Signature:**
   - Casual: `Best,\nYOUR_NAME\nYOUR_DOMAIN`
   - Formal: `Kind regards,\nYOUR_NAME\nYOUR_DOMAIN`
+
+**CRITICAL RULE:** Never invent personalized details. If notes are unclear or might belong to a different lead, stay generic. A false personalized detail is worse than an honest generic one. Track these lessons in `knowledge/learnings.md`.
 
 ---
 
@@ -89,8 +122,8 @@ Hey Simon,
 
 we had a call planned for late March about your platform — you mentioned
 pushing it to early April.
-Just wanted to check if you've made progress or if we should pick up the
-Webflow + Stripe integration discussion again.
+Just wanted to check if you've made progress or if we should pick up
+the integration discussion again.
 Do you have 20 minutes this week for a quick call?
 
 Best,
@@ -100,13 +133,14 @@ YOUR_DOMAIN
 
 ### ATTEMPTED_TO_CONTACT (formal) — with notes context:
 ```
-Subject: Website for [Company] — quick follow-up
+Subject: Project for [Company] — quick follow-up
 
 Hello Mr. Smith,
 
-you had expressed interest in a new website for your company — responsive,
-SEO-optimized, with approximately 50 pages.
-I wanted to check in to see if you still have a need or if things have changed.
+you had expressed interest in our services for your company —
+specifically around [topic from notes].
+I wanted to check in to see if you still have a need or if
+things have changed.
 If you'd like, we can schedule a brief call.
 
 Kind regards,
@@ -116,13 +150,12 @@ YOUR_DOMAIN
 
 ### ATTEMPTED_TO_CONTACT (formal) — without notes:
 ```
-Subject: Website [Company] — quick follow-up
+Subject: [Company] — quick follow-up
 
 Hello [First Name],
 
-we were in touch some time ago regarding your digital presence.
-I wanted to briefly check if the topic of website or online marketing
-is still relevant for you.
+we were in touch some time ago regarding your business needs.
+I wanted to briefly check if this topic is still relevant for you.
 If so, I'm happy to schedule a short call.
 
 Kind regards,

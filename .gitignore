@@ -1,5 +1,24 @@
+# Dependencies
 node_modules/
+
+# Environment
+.env
+.env.local
+
+# Runtime data (contains real contacts — never commit)
 table.tsv
 output/errors.log
 output/preview.json
 output/already_drafted.json
+output/research-reports/*.md
+output/recovery-*.md
+
+# Keep directory structure
+!output/.gitkeep
+!output/research-reports/.gitkeep
+
+# Editor
+.DS_Store
+.vscode/
+.idea/
+*.swp

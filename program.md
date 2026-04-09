@@ -1,119 +1,79 @@
-# HubSpot Follow-up Email Agent — Program
+# HubSpot Sales Agent — Program
 
-This is the authoritative instruction file for the autonomous email agent.
-Read this file first before doing anything. Then read CLAUDE.md for email generation rules.
+This is the shared program file for all skills in the Sales Agent.
+Read this file first, then read `CLAUDE.md` for email generation rules and `skills/<skill>.md` for the specific skill you are invoking.
 
-## Goal
+## Mission
 
-Draft personalized follow-up emails for HubSpot leads and save them as Gmail drafts.
-One email per contact. Never draft the same contact twice.
-The goal: wake up to a full inbox of ready-to-send drafts.
+Automate the outbound sales flow:
+- Read contacts, deals, and notes from HubSpot
+- Generate personalized email drafts in Gmail (NEVER send)
+- Classify incoming replies and sync HubSpot status
+- Track everything in `table.tsv` as the single source of truth
 
-## Setup
+**Critical:** The agent NEVER sends emails on its own. It prepares drafts for human review.
 
-Before starting the loop:
+## Available Skills
 
-1. **Read `table.tsv`** — this is your experiment log. Extract the `email` column to build a skip-set of already-processed contacts.
-2. **Fetch ALL contacts from HubSpot** using `search_crm_objects`:
-   - objectType: `contacts`
-   - properties: `firstname`, `lastname`, `email`, `company`, `jobtitle`, `hs_lead_status`
-   - Paginate: repeat with increasing `offset` until `offset >= total`
-3. **Build your work queue**: contacts where:
-   - `email` is not empty
-   - `hs_lead_status` is NOT in your exclude list (configure in CLAUDE.md)
-   - email is NOT already in `table.tsv`
+| Skill | File | Purpose |
+|-------|------|---------|
+| **follow-up-loop** | `skills/follow-up-loop.md` | Bulk outreach to HubSpot contacts |
+| **inbox-classifier** | `skills/inbox-classifier.md` | Classify replies + auto-draft responses |
+| **research-outreach** | `skills/research-outreach.md` | Research-driven personalized outreach (configurable audit type) |
+| **lead-recovery** | `skills/lead-recovery.md` | Decision framework for stale deals |
 
-Confirm setup is complete, then start the loop immediately.
+See `prompts/invoke-skill.md` for how to invoke each skill.
 
-## Per-Contact Loop — NEVER STOP
+## Two Paths: MCP or CLI
 
-For each contact in the work queue:
+This agent runs on any local agent harness. Each skill supports two interchangeable execution paths:
 
-### Step 1 — Read Notes
-Call `search_crm_objects` with:
-- objectType: `notes`
-- properties: `hs_note_body`, `hs_timestamp`
-- filterGroups: associatedWith contact ID
-- sorts: `hs_timestamp DESCENDING`
+**Path A — MCP tools (any MCP-capable harness):**
+Works with Claude Code, Cursor, Continue, Windsurf, Zed, or any custom harness with an MCP client. Install the HubSpot + Gmail MCP servers in your harness and go.
+- HubSpot via `mcp__claude_ai_HubSpot__*`
+- Gmail via `mcp__claude_ai_Gmail__*`
 
-If no notes exist: generate email based on lead status only (skip to Step 3).
-
-### Step 2 — Check for Skip Flags
-Scan all note bodies for skip phrases (case-insensitive). Configure your own skip flags — examples:
-- `do not contact`
-- `already in contact with [team member]`
-- `not interested`
-- `already a customer`
-
-If ANY flag found → log to `table.tsv` with `status=skipped`, notes_summary = the flag found. Move to next contact immediately.
-
-### Step 3 — Extract Context from Notes
-From the most recent notes, extract:
-- **Project type**: What did they originally want? (Website, SEO, Ads, Platform, etc.)
-- **Status**: Where did things end? (Meeting scheduled, no feedback, proposal sent, etc.)
-- **Budget**: Any numbers mentioned?
-- **Special details**: Anything specific that makes this contact memorable
-
-This context is the email hook. Use it.
-
-### Step 4 — Generate Email
-See CLAUDE.md for full rules. Key points:
-- Greeting and tone are determined by `hs_lead_status`
-- Subject: reference the project, NOT just "Follow-up"
-- Body: max 5-7 sentences, end with concrete CTA
-- Hook: pick up exactly where things were left, or reference the project they discussed
-- If no notes: use lead status + company/job title for personalization
-
-### Step 5 — Create Gmail Draft
-Call `gmail_create_draft`:
-- `to`: contact email
-- `subject`: generated subject
-- `body`: generated email text
-- `contentType`: `text/plain`
-
-Save the returned `draftId`.
-
-### Step 6 — Log to table.tsv
-Immediately after draft creation, append one row to `table.tsv`:
-```
-<email>	<firstname>	<lastname>	<company>	<lead_status>	<notes_summary>	<draft_id>	drafted	<ISO timestamp>
+**Path B — Local CLI tools (universal fallback):**
+Works with any harness that can execute shell commands. Run `npm install`, fill in `.env`, and the agent shells out to:
+```bash
+node src/tools/hubspot.js <command>    # HubSpot REST API wrapper
+node src/tools/gmail.js <command>      # Gmail API wrapper
+node src/tools/webfetch.js <command>   # HTML fetch + parse
 ```
 
-Use `node src/tracker.js append "..."` or write directly. Do NOT skip this step.
-notes_summary: max 1 sentence, the key context used for the email.
+Pick whichever matches your setup. You can also mix both paths (e.g., MCP for HubSpot + CLI for webfetch). See `AGENTS.md` for harness compatibility details.
 
-### Step 7 — Continue
-Move immediately to the next contact. Do NOT pause. Do NOT ask for confirmation.
+## Universal Constraints (apply to all skills)
 
-## What you CAN do
-- Read HubSpot notes for any contact
-- Generate email content freely
+### What the agent CAN do
+- Read HubSpot contacts, notes, and deals
+- Generate email content freely (following `CLAUDE.md` rules)
 - Create Gmail drafts
+- Update HubSpot lead status (only in `inbox-classifier`)
+- Fetch external URLs for research (only in `research-outreach`)
+- Write to `table.tsv` and `output/` files
 
-## What you CANNOT do
-- Send emails — drafts only
-- Modify the `table.tsv` header row
+### What the agent CANNOT do
+- **Send emails** — drafts only
+- Draft the same contact twice (check `table.tsv` first)
 - Skip the notes-reading step
-- Draft the same contact twice
-- Ask "should I continue?" mid-loop
+- Invent personalized details not present in notes
+- Ask "should I continue?" mid-loop in autonomous skills
+- Modify the `table.tsv` header row
 
-## Error Handling
-- HubSpot API error: log `status=error` in table.tsv, continue to next contact
-- Gmail API error: retry once after 2 seconds. If still failing: log `status=error`, continue
-- Contact has no email: skip silently (don't log to table.tsv)
-- Log all errors to `output/errors.log`: `[ISO-TIMESTAMP] ERROR: <email> — <message>`
+## Error Handling (shared across skills)
+
+- **HubSpot API error:** log `status=error` in `table.tsv`, continue to next contact
+- **Gmail API error:** retry once after 2 seconds. If still failing: log `status=error`, continue
+- **Contact has no email:** skip silently (don't log to `table.tsv`)
+- **Log all errors** to `output/errors.log`: `[ISO-TIMESTAMP] ERROR: <email> — <message>`
 
 ## Stopping Criteria
 
-**NEVER STOP on your own.** Run until manually interrupted by the human.
+Each skill defines its own stopping rules:
+- **follow-up-loop:** NEVER STOP until manually interrupted
+- **inbox-classifier:** ONE-SHOT — process all new replies, then STOP
+- **research-outreach:** Process the given lead list, then STOP
+- **lead-recovery:** Analyze the given deals, then STOP (no outreach, just recommendations)
 
-When interrupted, print final report:
-```
-Drafted: X
-Skipped: Y (skip flag or already processed)
-Errors: Z
-Remaining: N contacts not yet processed
-```
-
-If you run out of contacts in the current batch: fetch the next page and continue.
-If all contacts are processed: report completion and wait.
+Refer to each skill file for the exact behavior.
