@@ -4,7 +4,7 @@
 >
 > **Three sections:**
 > - **Section A — Cheat Sheets** (static, human-maintained): greeting rules, reply strategy.
-> - **Section B — Running Log** (append-only, written by skills): chronological observations, newest first. Capped at 100 entries; older entries rotate to `knowledge/learnings-archive.md`.
+> - **Section B — Running Log** (append-only, written by skills): chronological observations, newest first. Grows unbounded.
 > - **Section C — Distilled Patterns** (human-curated): when ≥3 Section B entries converge on the same theme, a human promotes the finding here as a rule.
 
 ---
@@ -55,7 +55,7 @@ Track observations about when casual vs. formal greetings work for your market:
 
 ## Section B — Running Log
 
-> Skills append entries here at the end of every run via `npx tsx src/learnings.ts append ...`. Newest first. Cap: 100 entries — older entries rotate to `knowledge/learnings-archive.md`.
+> Skills append entries here at the end of every run via `npx tsx src/learnings.ts append ...`. Newest first. The log grows unbounded — trim manually via your editor if it ever gets too long.
 >
 > **Entry types:**
 > - `heartbeat` — always written by default. One-line run summary.

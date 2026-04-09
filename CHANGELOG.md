@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.7.0] - 2026-04-10
+
+### Changed
+- **README split to `docs/` subfolder.** README trimmed from 556 lines to ~255 lines. The heaviest reference sections moved out:
+  - `docs/setup.md` — prerequisites, install, HubSpot Private App walkthrough, Google OAuth walkthrough, verify-setup block
+  - `docs/architecture.md` — mermaid diagram, project structure tree, two tool paths (MCP + CLI), state files, tracker schema (13 columns), Level 3 UI architecture
+  - `docs/dashboard.md` — full dashboard UI walkthrough (run instructions, 4 tabs, skill run modes, security posture, file layout)
+- **README gains a "5-Minute Quickstart"** at the top — the shortest path from `git clone` to a first preview-mode draft in under five minutes. Reveals depth gradually via the other sections and the `docs/` links.
+- **`table.tsv` prose sweep.** v2.6 deliberately left skill prose alone because CLI commands still worked; v2.7 does the full consistency sweep. All ~25 `table.tsv` mentions in `CLAUDE.md`, `program.md`, 6 skill files, and both prompt files now read "tracker" (or "tracker.db" where the SQLite file is specifically meant). `CHANGELOG.md` historical entries and `SECURITY.md` backwards-compat mentions remain untouched.
+- **`program.md` + `follow-up-loop.md` constraint update:** "Modify the `table.tsv` header row" → "Modify the tracker schema (columns are fixed — see `src/db.ts`)". The old phrasing didn't make sense against a SQLite-backed tracker.
+
+### Removed
+- **Learnings running-log rotation + archive file.** `src/learnings.ts` no longer maintains a `MAX_ENTRIES = 100` cap, no longer writes to `knowledge/learnings-archive.md`, no longer imports `appendFileSync`. The `archiveEntries()` function is gone. Section B now grows unbounded — trim manually via editor if it ever gets too long. Rationale: the rotation was theoretical at current scale and added conceptual overhead with no practical value. `knowledge/learnings.md` and `README.md` (now `docs/architecture.md`) prose updated to drop the "Capped at 100 entries" mentions. The Section A/B/C structure and heartbeat/observation vocabulary are unchanged — only the rotation plumbing is removed.
+
+### Fixed
+- **"Branche-agnostic" typo.** Two hits in `README.md` and one in `skills/research-outreach.md` corrected to "industry-agnostic". `CHANGELOG.md:179` stays as-is (frozen historical v2.0 entry).
+
+### Unchanged
+- Tracker schema, SQLite storage, `src/db.ts`, `src/tracker.ts`, `src/performance.ts`, all `src/tools/*.ts` — untouched.
+- All UI components, API routes, `ui/src/lib/types.ts`. The learnings API endpoint still returns the same shape (rotation was never exposed via the API).
+- All 7 skill "Append to learnings" sections keep their heartbeat/observation templates and decision guidance.
+- `CHANGELOG.md` historical entries (frozen).
+- `SECURITY.md` backwards-compat `table.tsv` mentions (legitimate migration context).
+- `AGENTS.md`, `CONTRIBUTING.md`, `knowledge/research-config.md`.
+
+### Rollback
+`git revert HEAD` on the v2.7 commit. No schema changes, no state-file format changes, no API changes. The existing `tracker.db` and `knowledge/learnings.md` stay readable by v2.6.1 unchanged.
+
 ## [2.6.1] - 2026-04-10
 
 ### Changed

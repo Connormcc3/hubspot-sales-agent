@@ -14,7 +14,7 @@
 Read skills/follow-up-loop.md and CLAUDE.md, then run the skill autonomously.
 
 NEVER STOP. Work through all contacts from HubSpot until manually interrupted.
-Follow the 7-step loop strictly. Log every contact immediately to table.tsv.
+Follow the 7-step loop strictly. Log every contact immediately to tracker.
 Do NOT ask for confirmation mid-loop.
 
 At the end: print summary (drafted / skipped / errors / remaining).
@@ -26,7 +26,7 @@ At the end: print summary (drafted / skipped / errors / remaining).
 Read skills/follow-up-loop.md and CLAUDE.md, then run the skill in PREVIEW MODE.
 
 For each contact: read notes → generate email → print to console.
-NO gmail draft creation, NO table.tsv update.
+NO gmail draft creation, NO tracker update.
 Show for each contact: email, lead status, subject, body.
 Process max 10 contacts, then stop and show summary.
 ```
@@ -35,7 +35,7 @@ Process max 10 contacts, then stop and show summary.
 
 ```
 Read skills/follow-up-loop.md and CLAUDE.md. Run the skill in Resume mode.
-table.tsv already contains processed contacts — skip them automatically.
+tracker already contains processed contacts — skip them automatically.
 NEVER STOP. Continue until manually interrupted.
 ```
 
@@ -50,7 +50,7 @@ Email: <email@example.com>
 3. Generate the follow-up email
 4. Show me: subject + body + brief reasoning
 
-Do NOT create a Gmail draft. Do NOT update table.tsv.
+Do NOT create a Gmail draft. Do NOT update tracker.
 ```
 
 ### Batch with Approval (controlled)
@@ -59,7 +59,7 @@ Do NOT create a Gmail draft. Do NOT update table.tsv.
 Read skills/follow-up-loop.md and CLAUDE.md. Run in APPROVAL MODE.
 
 For each contact: generate email → show me → wait for my response.
-- "ok" → create draft + log to table.tsv
+- "ok" → create draft + log to tracker
 - "skip" → skip
 - "stop" → end loop + show summary
 ```
@@ -122,7 +122,7 @@ For each lead:
 2. Extract top-3 findings
 3. Write full report to output/research-reports/<domain-slug>.md
 4. Create HTML email draft with findings as table
-5. Log to table.tsv with notes_summary "RES: <domain> - <top1>"
+5. Log to tracker with notes_summary "RES: <domain> - <top1>"
 
 For unreachable domains: skip with log.
 At the end: run report (audits ok / skipped / drafts created).
@@ -204,7 +204,7 @@ Analyze the entire HubSpot pipeline.
 
 1. Fetch ALL contacts (paginate through all pages)
 2. Fetch ALL deals (paginate through all pages)
-3. Cross-reference with table.tsv for agent coverage
+3. Cross-reference with tracker for agent coverage
 4. Generate the 5-section analysis:
    - Contact distribution (by lead_status, industry, cohort)
    - Deal health (open/won/lost, win rate, stale, zombie)
@@ -344,7 +344,7 @@ Pull:
 - All HubSpot notes chronologically
 - All linked deals with stage and history
 - Complete Gmail thread history (both directions)
-- Prior agent interactions from table.tsv
+- Prior agent interactions from tracker
 
 Output: structured brief with who they are, relationship history,
 last activity, current state, and recommended angle for my next move.

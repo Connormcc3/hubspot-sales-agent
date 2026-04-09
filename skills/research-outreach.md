@@ -13,7 +13,7 @@ Curated high-quality outreach: for a **manually selected** lead list, research e
 
 **Difference from `follow-up-loop`:** Not mass sending. Deliberately curated. 5-25 leads per run. More effort per lead, significantly higher reply rate.
 
-**Branche-agnostic:** You define what to research in `knowledge/research-config.md`. Default examples include SEO audits, UX reviews, brand positioning analyses, tech stack audits, content strategy reviews, competitive analyses, and more. Pick one (or define your own) that aligns with what you sell.
+**Industry-agnostic:** You define what to research in `knowledge/research-config.md`. Default examples include SEO audits, UX reviews, brand positioning analyses, tech stack audits, content strategy reviews, competitive analyses, and more. Pick one (or define your own) that aligns with what you sell.
 
 ## Trigger
 Manual with a lead list. Invocation examples in `prompts/invoke-skill.md`.
@@ -21,7 +21,7 @@ Manual with a lead list. Invocation examples in `prompts/invoke-skill.md`.
 ## Output
 - `output/research-reports/<domain>.md` — full research report per lead
 - Gmail HTML drafts with embedded top-3 findings
-- `table.tsv` rows with `status=drafted` and `RES:` prefix in `notes_summary`
+- `tracker` rows with `status=drafted` and `RES:` prefix in `notes_summary`
 
 ## Stopping
 When all leads in the input list are processed. On errors (offline domains, expired SSL, 404): silent skip with log.
@@ -217,7 +217,7 @@ Write observation **instead of** the heartbeat. See `program.md` for the univers
 - Fetch external websites via WebFetch / CLI
 - Write markdown reports to `output/research-reports/`
 - Create HTML drafts in Gmail
-- Update `table.tsv`
+- Update `tracker`
 
 ### Forbidden
 - Send emails

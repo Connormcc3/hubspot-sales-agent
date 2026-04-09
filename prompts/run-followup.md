@@ -18,7 +18,7 @@ For each contact:
   3. Extract context from notes (status, project, budget)
   4. Generate personalized follow-up email
   5. Create Gmail draft
-  6. Log to table.tsv immediately (npx tsx src/tracker.ts append ...)
+  6. Log to tracker immediately (npx tsx src/tracker.ts append ...)
   7. Continue — do NOT ask for confirmation
 
 When interrupted: print summary.
@@ -31,7 +31,7 @@ When interrupted: print summary.
 ```
 Read skills/follow-up-loop.md and CLAUDE.md, then start the follow-up loop in PREVIEW MODE.
 
-For each contact: read notes → generate email → print to console (NO Gmail call, NO table.tsv update).
+For each contact: read notes → generate email → print to console (NO Gmail call, NO tracker update).
 Show for each contact: email address, lead status, subject, email text.
 Process max 10 contacts, then stop and show summary.
 ```
@@ -42,7 +42,7 @@ Process max 10 contacts, then stop and show summary.
 
 ```
 Read skills/follow-up-loop.md and CLAUDE.md. Start the autonomous loop in Resume mode.
-table.tsv already contains processed contacts — skip them automatically.
+tracker already contains processed contacts — skip them automatically.
 NEVER STOP. Continue until manually interrupted.
 ```
 
@@ -59,7 +59,7 @@ Email: <email@example.com>
 3. Generate the follow-up email
 4. Show me: subject + email text + brief explanation of why this approach
 
-Do NOT create a Gmail draft and do NOT update table.tsv.
+Do NOT create a Gmail draft and do NOT update tracker.
 ```
 
 ---
@@ -70,7 +70,7 @@ Do NOT create a Gmail draft and do NOT update table.tsv.
 Read skills/follow-up-loop.md and CLAUDE.md. Start the follow-up loop in APPROVAL MODE.
 
 For each contact: generate email → show me → wait for my response.
-If I say "ok": create draft + log to table.tsv.
+If I say "ok": create draft + log to tracker.
 If I say "skip": skip.
 If I say "stop": stop and show summary.
 ```

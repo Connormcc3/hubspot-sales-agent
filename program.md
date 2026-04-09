@@ -9,7 +9,7 @@ Automate the outbound sales flow:
 - Read contacts, deals, and notes from HubSpot
 - Generate personalized email drafts in Gmail (NEVER send)
 - Classify incoming replies and sync HubSpot status
-- Track everything in `table.tsv` as the single source of truth
+- Track everything in `tracker` as the single source of truth
 
 **Critical:** The agent NEVER sends emails on its own. It prepares drafts for human review.
 
@@ -59,7 +59,7 @@ Pick whichever matches your setup. You can also mix both paths (e.g., MCP for Hu
   - Default: `append heartbeat` with a one-line run summary (counts, distribution, any notable hint).
   - If a genuine pattern was seen (≥3 leads showing the same signal, an unexpected cluster, or a segment behaving differently from Section A): `append observation` **instead of** the heartbeat.
   - Empty or filler observations are worse than a heartbeat — if nothing surprising happened, write the heartbeat.
-  - `compose-reply` is the one exception: observation-only (no heartbeat), because it runs per-lead and heartbeats would duplicate `table.tsv`.
+  - `compose-reply` is the one exception: observation-only (no heartbeat), because it runs per-lead and heartbeats would duplicate `tracker`.
 
 ### What the agent CAN do
 - Read HubSpot contacts, notes, and deals
@@ -67,21 +67,21 @@ Pick whichever matches your setup. You can also mix both paths (e.g., MCP for Hu
 - Create Gmail drafts
 - Update HubSpot lead status (only in `inbox-classifier`)
 - Fetch external URLs for research (only in `research-outreach`)
-- Write to `table.tsv` and `output/` files
+- Write to `tracker` and `output/` files
 
 ### What the agent CANNOT do
 - **Send emails** — drafts only
-- Draft the same contact twice (check `table.tsv` first)
+- Draft the same contact twice (check `tracker` first)
 - Skip the notes-reading step
 - Invent personalized details not present in notes
 - Ask "should I continue?" mid-loop in autonomous skills
-- Modify the `table.tsv` header row
+- Modify the tracker schema (columns are fixed — see `src/db.ts`)
 
 ## Error Handling (shared across skills)
 
-- **HubSpot API error:** log `status=error` in `table.tsv`, continue to next contact
+- **HubSpot API error:** log `status=error` in `tracker`, continue to next contact
 - **Gmail API error:** retry once after 2 seconds. If still failing: log `status=error`, continue
-- **Contact has no email:** skip silently (don't log to `table.tsv`)
+- **Contact has no email:** skip silently (don't log to `tracker`)
 - **Log all errors** to `output/errors.log`: `[ISO-TIMESTAMP] ERROR: <email> — <message>`
 
 ## Stopping Criteria

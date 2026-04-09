@@ -80,7 +80,7 @@ Fetch **everything** available about this lead. Unlike `follow-up-loop` which re
   - **CLI:** `npx tsx src/tools/gmail.ts thread read --id <threadId>`
 
 **2d. Prior agent interactions:**
-- Check `table.tsv` for any rows matching this email
+- Check `tracker` for any rows matching this email
 - If present, note: when was the agent's last draft? What was the notes_summary? Was there a classification? Did the lead reply?
 
 ### Step 3 — Accept custom context injection
@@ -184,7 +184,7 @@ generate a brief, then draft the email. Ask me before creating the Gmail draft.
 
 ## Append to learnings (observation-only, if surprising)
 
-`compose-reply` is the one skill that does **not** write a heartbeat. It runs per-lead, frequently, and `table.tsv` already records each invocation — heartbeats here would be noise.
+`compose-reply` is the one skill that does **not** write a heartbeat. It runs per-lead, frequently, and `tracker` already records each invocation — heartbeats here would be noise.
 
 **Only append if the lead was genuinely surprising:**
 - A new pattern not in existing learnings (Section B or C)
@@ -208,7 +208,7 @@ Otherwise: skip. No heartbeat. See `program.md` for the universal teardown rule 
 ### Allowed
 - Read all HubSpot data for the lead (contact, notes, deals)
 - Read full Gmail thread history for the lead (both directions)
-- Read `table.tsv` for prior agent interactions
+- Read `tracker` for prior agent interactions
 - Generate briefs and drafts with full context
 - Create Gmail drafts (only with explicit user confirmation)
 - Save dossiers to `output/lead-dossiers/` (only with explicit flag)

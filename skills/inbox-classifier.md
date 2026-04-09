@@ -7,7 +7,7 @@
 ---
 
 ## Purpose
-Reactive one-shot command: reads the inbox for new replies to sent outreach emails, classifies each reply into 1 of 8 categories, creates appropriate reply drafts (when sensible), updates HubSpot lead status, and writes reply fields to `table.tsv`.
+Reactive one-shot command: reads the inbox for new replies to sent outreach emails, classifies each reply into 1 of 8 categories, creates appropriate reply drafts (when sensible), updates HubSpot lead status, and writes reply fields to `tracker`.
 
 **No loop.** One invocation = one run = all new replies processed = STOP.
 
@@ -17,7 +17,7 @@ Manual. Recommended: 1-2x daily, or after each outreach wave (24-48h later). Inv
 ## Output
 - Reply drafts in Gmail (only for POSITIVE_* classifications)
 - HubSpot updates (lead status + note with classification + date)
-- `table.tsv` updates: `reply_received_at`, `reply_classification`, `reply_draft_id`, `hubspot_status_after`
+- `tracker` updates: `reply_received_at`, `reply_classification`, `reply_draft_id`, `hubspot_status_after`
 - Run report in the console
 
 ## Stopping
@@ -213,7 +213,7 @@ See `program.md` for the universal teardown rule.
 - Create reply drafts
 - Update HubSpot lead status
 - Add HubSpot notes
-- Update `table.tsv`
+- Update `tracker`
 
 ### Forbidden
 - Send emails

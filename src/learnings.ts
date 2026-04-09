@@ -13,22 +13,19 @@
  *
  * Behavior:
  *   - Append entries are inserted right after the <!-- LEARNINGS_LOG_START --> marker (newest first).
- *   - Section B is capped at MAX_ENTRIES entries. When exceeded, the oldest entries rotate
- *     to knowledge/learnings-archive.md.
+ *   - Section B grows unbounded. Trim manually via your editor if it ever gets too long.
  *   - Read parses the file into {sectionA_raw, sectionB (parsed entries), sectionC_raw}. Used by the dashboard UI.
  */
 
-import { readFileSync, writeFileSync, existsSync, appendFileSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const LEARNINGS_PATH = resolve(__dirname, '../knowledge/learnings.md');
-const ARCHIVE_PATH = resolve(__dirname, '../knowledge/learnings-archive.md');
 
 const LOG_START = '<!-- LEARNINGS_LOG_START -->';
 const LOG_END = '<!-- LEARNINGS_LOG_END -->';
-const MAX_ENTRIES = 100;
 
 interface ParsedArgs {
   [key: string]: string | true | undefined;
@@ -109,33 +106,15 @@ function splitEntries(log: string): string[] {
   return entries;
 }
 
-function archiveEntries(entries: string[]): void {
-  if (entries.length === 0) return;
-  const header = `\n## Archived ${todayISODate()}\n\n`;
-  const body = entries.join('\n\n') + '\n';
-  if (!existsSync(ARCHIVE_PATH)) {
-    const intro =
-      '# Learnings Archive\n\n> Older Section B entries rotated from `knowledge/learnings.md` when the running-log cap was exceeded.\n';
-    writeFileSync(ARCHIVE_PATH, intro + header + body, 'utf-8');
-  } else {
-    appendFileSync(ARCHIVE_PATH, header + body, 'utf-8');
-  }
-}
-
 function appendEntry(newEntry: string): void {
   const content = readLearnings();
   const { before, log, after } = getLogSection(content);
   const existing = splitEntries(log);
 
-  // Newest first
+  // Newest first, grows unbounded
   const allEntries = [newEntry, ...existing];
 
-  // Rotate oldest entries past the cap
-  const keep = allEntries.slice(0, MAX_ENTRIES);
-  const archive = allEntries.slice(MAX_ENTRIES);
-  archiveEntries(archive);
-
-  const newLog = keep.length > 0 ? '\n\n' + keep.join('\n\n') + '\n\n' : '\n\n';
+  const newLog = allEntries.length > 0 ? '\n\n' + allEntries.join('\n\n') + '\n\n' : '\n\n';
   writeFileSync(LEARNINGS_PATH, before + newLog + after, 'utf-8');
 }
 
@@ -280,8 +259,7 @@ Read (parse learnings.md into structured JSON — used by the dashboard UI):
 
 Skills should append exactly one entry per run: observation if something notable was
 seen, otherwise heartbeat. Entries land in knowledge/learnings.md Section B (newest
-first). The oldest entries rotate to knowledge/learnings-archive.md when Section B
-exceeds ${MAX_ENTRIES} entries.`);
+first). The log grows unbounded — trim manually via your editor if it ever gets too long.`);
 }
 
 const [, , command, subcommand, ...rest] = process.argv;

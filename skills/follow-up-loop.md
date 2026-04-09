@@ -13,7 +13,7 @@ Manual. Invocation examples in `prompts/invoke-skill.md`.
 
 ## Output
 - Gmail drafts (one per contact)
-- `table.tsv` rows with `status=drafted` (or `skipped`/`error`)
+- `tracker` rows with `status=drafted` (or `skipped`/`error`)
 - `output/errors.log` on API errors
 
 ## Stopping
@@ -27,7 +27,7 @@ Before starting the loop:
 
 0. **Load learnings** — Read `knowledge/learnings.md`. Section A informs greeting/tone, the most recent ~20 entries of Section B flag recent patterns, Section C lists distilled rules. Universal requirement — see `program.md`.
 
-1. **Read the tracker:** `npx tsx src/tracker.ts read` → list of already-processed emails from `table.tsv`. This is your skip set.
+1. **Read the tracker:** `npx tsx src/tracker.ts read` → list of already-processed emails from `tracker`. This is your skip set.
 
 2. **Fetch HubSpot contacts:**
    - **Path A (MCP):** `mcp__claude_ai_HubSpot__search_crm_objects`
@@ -61,7 +61,7 @@ Scan all note bodies (case-insensitive) for your configured skip phrases. Exampl
 - `not interested`
 - `already in contact with [team member]`
 
-If ANY flag found → log to `table.tsv` with `status=skipped` and `notes_summary=<found flag>`. Move to next contact immediately.
+If ANY flag found → log to `tracker` with `status=skipped` and `notes_summary=<found flag>`. Move to next contact immediately.
 
 ### Step 3 — Extract context
 From the most recent notes:
@@ -88,7 +88,7 @@ Full rules in `CLAUDE.md`. Key points:
 
 Save the returned `draftId`.
 
-### Step 6 — Log to table.tsv
+### Step 6 — Log to tracker
 Immediately after draft creation:
 ```bash
 npx tsx src/tracker.ts append "<email>\t<firstname>\t<lastname>\t<company>\t<lead_status>\t<notes_summary>\t<draft_id>\tdrafted\t<ISO timestamp>"
@@ -106,11 +106,11 @@ Move immediately to the next contact. No pausing. No asking for confirmation.
 - Read HubSpot notes for any contact
 - Generate email content freely
 - Create Gmail drafts
-- Write to `table.tsv`
+- Write to `tracker`
 
 ### Forbidden
 - Send emails — drafts only
-- Modify the `table.tsv` header row
+- Modify the tracker schema (columns are fixed — see `src/db.ts`)
 - Skip the notes-reading step
 - Draft the same contact twice
 - Ask "should I continue?" mid-loop

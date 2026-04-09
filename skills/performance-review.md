@@ -8,7 +8,7 @@
 
 ## Purpose
 
-**Closes the feedback loop.** Joins `table.tsv` draft rows with reply outcomes, fetches the actual draft bodies from Gmail to extract tone and subject-line features (data that isn't in the tracker), computes conversion rates by segment, surfaces statistical contrasts with conservative sample-size thresholds, produces a weekly report with concrete numbers, and proposes **exact markdown blocks** for `knowledge/learnings.md` Section C that the human reviews and promotes.
+**Closes the feedback loop.** Joins `tracker` draft rows with reply outcomes, fetches the actual draft bodies from Gmail to extract tone and subject-line features (data that isn't in the tracker), computes conversion rates by segment, surfaces statistical contrasts with conservative sample-size thresholds, produces a weekly report with concrete numbers, and proposes **exact markdown blocks** for `knowledge/learnings.md` Section C that the human reviews and promotes.
 
 **Does NOT auto-write to Section C.** Ever. Human review stays in the loop — this skill gives the human a copy-paste-ready pattern block with evidence and rationale.
 
@@ -208,7 +208,7 @@ If the user explicitly asks for lower thresholds, they must edit `src/performanc
 ## Constraints
 
 ### Allowed
-- Read all of `table.tsv` via `src/performance.ts`
+- Read all of `tracker` via `src/performance.ts`
 - Read individual Gmail drafts (subject + body) for deepening contrasts
 - Read HubSpot contacts for segment confirmation (optional)
 - Write report to `output/performance/<YYYY-MM-DD>.md`

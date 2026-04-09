@@ -174,7 +174,7 @@ YOUR_DOMAIN
 
 ## Tracking
 
-After every created draft, log to `table.tsv` immediately:
+After every created draft, log to `tracker` immediately:
 
 ```bash
 npx tsx src/tracker.ts append "email@example.com\tFirstName\tLastName\tCompany\tCONNECTED\tShort notes summary\tdraftId\tdrafted\t2026-04-08T10:00:00Z"

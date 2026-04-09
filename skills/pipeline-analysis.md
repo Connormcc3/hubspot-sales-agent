@@ -60,7 +60,7 @@ One-shot run. No loop, no background work. When the analysis is complete, print 
 - **Missing-data deals:** no `amount`, no `closedate`, no linked contact
 
 ### Section 3 — Agent Coverage
-Cross-reference contacts with `table.tsv`:
+Cross-reference contacts with `tracker`:
 - How many contacts has the agent touched? (drafted / skipped / declined / bounced)
 - How many untouched contacts remain in each lead_status bucket?
 - Reply rate on agent-drafted emails (if any `reply_classification` entries exist)
@@ -160,14 +160,14 @@ Write observation **instead of** the heartbeat when a real delta is present — 
 
 ### Allowed
 - Read all HubSpot contacts and deals (read-only)
-- Read `table.tsv` for cross-referencing
+- Read `tracker` for cross-referencing
 - Write analysis report to `output/analysis/`
 - Recommend next skills to run (with concrete inputs)
 
 ### Forbidden
 - Change any HubSpot data
 - Create Gmail drafts
-- Update `table.tsv`
+- Update `tracker`
 - Run another skill automatically — recommendations are for the human to act on
 
 ---
