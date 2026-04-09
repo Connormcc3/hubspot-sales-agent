@@ -134,6 +134,11 @@ hubspot-sales-agent/
 │   ├── lead-dossiers/            # Deep-context briefs from compose-reply
 │   ├── errors.log                # Runtime error log
 │   └── recovery-*.md             # Lead recovery analysis outputs
+├── ui/                           # Local dashboard (Next.js 16, App Router)
+│   ├── src/app/                  # Pages + API routes wrapping the parent CLIs
+│   ├── src/components/           # 4-tab dashboard (pipeline / performance / skills / learnings)
+│   ├── src/lib/                  # cli.ts execFile wrapper, skills templates, types
+│   └── package.json              # Separate install — see "Dashboard UI" section below
 ├── table.tsv                     # Single source of truth (13 columns, gitignored)
 ├── .env.example                  # Credential template
 ├── package.json
@@ -352,6 +357,60 @@ See [`prompts/invoke-skill.md`](prompts/invoke-skill.md) for all invocations, mo
 
 ---
 
+## Dashboard UI (optional)
+
+A local web dashboard lives in `ui/` — Next.js 16 app router, read-only over the tracker and learnings, with a skill trigger that either copies the composed prompt to your clipboard or opens a new Terminal tab running `claude`.
+
+### Architecture — Level 3 (UI wraps the same CLIs the agent uses)
+
+```
+Browser  ──HTTP──▶  Next.js API routes  ──execFile──▶  src/*.ts (tracker / performance / learnings)
+                                                              │
+                                                              ▼
+                                               table.tsv + knowledge/learnings.md
+                                                              ▲
+                                                              │
+                                                      Claude Code (agent)
+```
+
+The UI and the agent share one source of truth. Every API request re-runs the CLI — no server-side cache, no duplicated business logic, no data drift. Read-only on state; the only write path is triggering a skill (which runs in Claude Code, not in the UI server).
+
+### Run it
+
+```bash
+# First time
+npm run ui:install
+
+# Dev server (binds to 127.0.0.1 — localhost-only, never public)
+npm run ui:dev
+# → open http://127.0.0.1:3000
+```
+
+Or from the repo root directly: `cd ui && npm install && npm run dev`.
+
+### What's in it
+
+- **Pipeline tab** — metric cards (total contacts, reply rate, positive rate, awaiting), lead-status segmented bar, filter pills, contact table with expandable detail rows. Reads `table.tsv` via `tracker.ts rows`.
+- **Performance tab** — window selector (7/14/30 days), conversion funnel, per-segment conversion breakdown, proposed Section C rule cards with one-click "Copy block". Reads `performance.ts`.
+- **Skills tab** — 7 skill cards (Monday-morning pair + action skills). Click a card → slide-over detail panel with a per-skill parameter form, custom prefix textarea, live composed prompt preview, and two run modes (see below).
+- **Learnings tab** — Section C distilled patterns, Section B running-log timeline (observations vs heartbeats color-coded), collapsed Section A cheat-sheet viewer. Reads `learnings.md` via `learnings.ts read`.
+
+### Skill run modes
+
+- **Copy to clipboard** (default, universal) — composed prompt → `navigator.clipboard.writeText()` → toast. Switch to your Claude Code session and paste (Cmd+V). Works on every platform.
+- **Open new Terminal** (macOS only) — server runs `osascript` to open Terminal.app with `cd <repo root> && claude`, plus `pbcopy` to put the prompt on the clipboard. Paste once `claude` finishes booting. Non-macOS falls back to Copy mode with a 501 message.
+
+Neither mode sends emails or touches state directly. Both paths end with you reviewing and running a Claude Code session — the dashboard just composes the prompt and gets you there faster.
+
+### Security posture
+
+- Bound to `127.0.0.1` only. **Never expose publicly** — the UI has access to the same HubSpot + Gmail credentials your agent uses.
+- No auth, no sessions, no CSRF. Local tool by design.
+- Skill IDs validated against an allowlist before any child process spawns.
+- CLI calls use `execFile` with array args — no shell interpolation.
+
+---
+
 ## State files
 
 The agent has two state files — both living in the repo, both are single sources of truth for their concern:
@@ -477,6 +536,7 @@ See [AGENTS.md](AGENTS.md) for the integration pattern.
 - **Basic webfetch audit** — the built-in `webfetch.ts` audit covers basic SEO signals. For richer audits (Lighthouse, full-page render, etc.), extend the tool or integrate an external service
 - **OAuth setup** — Gmail OAuth requires a one-time refresh token generation, which can feel clunky. See README for walkthrough
 - **No email sending** — by design (drafts only)
+- **Dashboard UI is localhost-only** — never deploy publicly. The agent holds HubSpot + Gmail credentials and the UI has read access to everything in `table.tsv`. Terminal-run mode is macOS-only (osascript + Terminal.app); other platforms fall back to clipboard copy.
 
 ---
 

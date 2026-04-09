@@ -4,6 +4,7 @@
  *
  * Usage:
  *   tsx src/tracker.ts read                                              → print all emails (JSON array)
+ *   tsx src/tracker.ts rows                                              → print all rows as JSON array of objects
  *   tsx src/tracker.ts exists <email>                                    → print "true" or "false"
  *   tsx src/tracker.ts append <tsv-row>                                  → append a tab-separated row
  *   tsx src/tracker.ts update <email> <classification> [draft_id] [hs]   → set reply fields for existing row
@@ -89,6 +90,18 @@ function getEmails(): Set<string> {
   return new Set(readRows().map((cols) => (cols[Col.Email] || '').trim().toLowerCase()));
 }
 
+type RowObject = Record<(typeof COLUMNS)[number], string>;
+
+function rowsAsObjects(): RowObject[] {
+  return readRows().map((cols) => {
+    const obj = {} as RowObject;
+    for (let i = 0; i < COLUMNS.length; i++) {
+      obj[COLUMNS[i]] = cols[i] || '';
+    }
+    return obj;
+  });
+}
+
 function emailExists(email: string): boolean {
   return getEmails().has(email.trim().toLowerCase());
 }
@@ -160,6 +173,10 @@ switch (command) {
     console.log(JSON.stringify(emails, null, 2));
     break;
   }
+  case 'rows': {
+    console.log(JSON.stringify(rowsAsObjects(), null, 2));
+    break;
+  }
   case 'exists': {
     if (!args[0]) {
       console.error('Usage: tracker.ts exists <email>');
@@ -194,7 +211,7 @@ switch (command) {
   }
   default:
     console.error(
-      'Usage: tsx src/tracker.ts read | exists <email> | append <tsv-row> | update <email> <classification> [reply_draft_id] [hubspot_status_after]',
+      'Usage: tsx src/tracker.ts read | rows | exists <email> | append <tsv-row> | update <email> <classification> [reply_draft_id] [hubspot_status_after]',
     );
     process.exit(1);
 }

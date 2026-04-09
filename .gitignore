@@ -1,5 +1,10 @@
 # Dependencies
 node_modules/
+ui/node_modules/
+
+# Next.js build / cache
+ui/.next/
+ui/next-env.d.ts
 
 # Environment
 .env

@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.5.0] - 2026-04-09
+
+### Added
+- **Local dashboard UI (Next.js 16, App Router)** in a new `ui/` subdirectory. Level 3 architecture — API routes wrap the existing CLI tools (`tracker.ts`, `performance.ts`, `learnings.ts`, etc.) via `child_process.execFile`. UI and agent share one source of truth through `table.tsv` + `knowledge/learnings.md` — no duplicated business logic, no cache layer. Localhost-only (`127.0.0.1:3000`), no auth, never exposed publicly.
+- **Four tabs** matching the requested visual design (DM Sans + JetBrains Mono, HubSpot-orange accent, dark theme):
+  - **Pipeline** — metric cards, lead-status segmented bar, filter pills, contact table with expandable detail rows
+  - **Performance** — window selector (7/14/30d), conversion funnel, per-segment breakdown, proposed Section C rule cards with "Copy block" buttons
+  - **Skills** — Monday-morning pair + action skills cards, click opens a slide-over detail panel with per-skill param form, custom prefix textarea, live composed prompt preview
+  - **Learnings** — Section C highlights, Section B running-log timeline with type-colored dots, collapsed Section A cheat-sheet viewer
+- **Two skill run modes:**
+  - **Copy to clipboard (default, universal)** — composed prompt copied via `navigator.clipboard.writeText()` with a toast instructing the user to paste into their existing Claude Code session
+  - **Open new Terminal (macOS)** — `/api/skills/run` with `mode=terminal` spawns `osascript` to open Terminal.app with `cd <repo root> && claude`, plus `pbcopy` to put the prompt on the clipboard. Non-macOS returns 501 with a fallback hint.
+- `tracker.ts rows` command — returns full TSV rows as JSON array of objects (existing `read` still returns emails only). Powers the Pipeline tab.
+- `learnings.ts read [--section A|B|C] [--limit N] [--skill <name>]` command — parses learnings.md into `{sectionA_raw, sectionB, sectionC_raw}` with optional filters. Powers the Learnings tab.
+- `ui:dev`, `ui:build`, `ui:install` convenience npm scripts at the repo root.
+
+### Changed
+- README: new "Dashboard UI" section explaining how to run it, the Level 3 architecture, and the localhost-only constraint. Updated project structure tree to include `ui/` and new output directories. Known Limitations updated.
+- Tracker schema unchanged. Learnings schema unchanged. All existing CLI commands untouched.
+
+### Security notes
+- Next.js dev server bound to `127.0.0.1` only (never `0.0.0.0`). No auth, no sessions — the UI has access to the same HubSpot + Gmail credentials the agent uses, so **never expose it publicly**.
+- Skill IDs passed to `/api/skills/run` are validated against an allowlist before any child process is spawned.
+- All CLI invocations use `execFile` with array args — no shell interpolation, no injection surface.
+
 ## [2.4.0] - 2026-04-09
 
 ### Added

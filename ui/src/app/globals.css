@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@theme {
+  /* Surface / text palette (from dashboard mockup) */
+  --color-bg: #0c0c14;
+  --color-card: rgba(255, 255, 255, 0.02);
+  --color-card-hover: rgba(255, 255, 255, 0.04);
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-border-strong: rgba(255, 255, 255, 0.1);
+  --color-text: #e8e8f0;
+  --color-text-2: #c8c8d8;
+  --color-text-muted: #8b8ba0;
+  --color-text-subtle: #5a5a6e;
+  --color-text-faint: #3a3a4e;
+
+  /* HubSpot accent */
+  --color-accent: #ff7a59;
+  --color-accent-strong: #ff5733;
+
+  /* Lead status palette */
+  --color-status-connected: #22c55e;
+  --color-status-attempted: #f59e0b;
+  --color-status-unqualified: #6b7280;
+  --color-status-new: #3b82f6;
+  --color-status-inprogress: #a855f7;
+  --color-status-opendeal: #14b8a6;
+  --color-status-badtiming: #f97316;
+
+  /* Reply classification palette */
+  --color-pos: #22c55e;
+  --color-neg-hard: #ef4444;
+  --color-neg-soft: #f59e0b;
+  --color-neutral: #8b8ba0;
+
+  /* Status badge palette (mirrors the mockup) */
+  --color-drafted: #3b82f6;
+  --color-skipped: #6b7280;
+  --color-error: #ef4444;
+  --color-declined: #f59e0b;
+  --color-bounced: #ef4444;
+  --color-awaiting: #a855f7;
+
+  /* Fonts (loaded via next/font in layout.tsx, exposed as CSS vars) */
+  --font-sans: var(--font-dm-sans);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-display: var(--font-space-grotesk);
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-text-2);
+  font-family: var(--font-sans), "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}

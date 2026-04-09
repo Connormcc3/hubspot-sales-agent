@@ -9,11 +9,13 @@
  * Usage:
  *   tsx src/learnings.ts append heartbeat --skill <skill> --text "<one-liner>"
  *   tsx src/learnings.ts append observation --skill <skill> --headline "..." --context "..." --observed "..." --apply "..."
+ *   tsx src/learnings.ts read [--section A|B|C] [--limit N] [--skill <name>]
  *
  * Behavior:
- *   - Entries are inserted right after the <!-- LEARNINGS_LOG_START --> marker (newest first).
+ *   - Append entries are inserted right after the <!-- LEARNINGS_LOG_START --> marker (newest first).
  *   - Section B is capped at MAX_ENTRIES entries. When exceeded, the oldest entries rotate
  *     to knowledge/learnings-archive.md.
+ *   - Read parses the file into {sectionA_raw, sectionB (parsed entries), sectionC_raw}. Used by the dashboard UI.
  */
 
 import { readFileSync, writeFileSync, existsSync, appendFileSync } from 'fs';
@@ -141,6 +143,109 @@ function formatHeartbeat(skill: string, text: string): string {
   return `### ${todayISODate()} · ${skill} · heartbeat\n- ${text}`;
 }
 
+// ----- Read: parse learnings.md into structured sections -----
+
+type EntryType = 'heartbeat' | 'observation';
+
+interface ParsedEntry {
+  date: string;
+  skill: string;
+  headline: string;
+  type: EntryType;
+  body: string;
+}
+
+interface LearningsData {
+  sectionA_raw: string;
+  sectionB: ParsedEntry[];
+  sectionC_raw: string;
+}
+
+function sliceBetween(content: string, startHeading: string, endHeading: string): string {
+  const startIdx = content.indexOf(startHeading);
+  if (startIdx === -1) return '';
+  const afterStart = content.slice(startIdx);
+  const endIdx = afterStart.indexOf(endHeading, startHeading.length);
+  if (endIdx === -1) return afterStart.trim();
+  return afterStart.slice(0, endIdx).trim();
+}
+
+function parseEntry(raw: string): ParsedEntry | null {
+  // Heading format: ### YYYY-MM-DD · <skill> · <headline>
+  const lines = raw.split('\n');
+  const headingLine = lines[0] || '';
+  if (!headingLine.startsWith('### ')) return null;
+
+  const headingBody = headingLine.slice(4).trim();
+  const parts = headingBody.split(' · ').map((s) => s.trim());
+  if (parts.length < 3) return null;
+
+  const [date, skill, ...rest] = parts;
+  const headline = rest.join(' · ');
+  const type: EntryType = headline.toLowerCase() === 'heartbeat' ? 'heartbeat' : 'observation';
+  const body = lines.slice(1).join('\n').trim();
+
+  return { date, skill, headline, type, body };
+}
+
+function readAllLearnings(): LearningsData {
+  const content = readLearnings();
+
+  const sectionA_raw = sliceBetween(content, '## Section A', '## Section B');
+  const sectionC_raw = sliceBetween(content, '## Section C', '## Appendix');
+
+  const { log } = getLogSection(content);
+  const rawEntries = splitEntries(log);
+  const sectionB = rawEntries
+    .map((raw) => parseEntry(raw))
+    .filter((e): e is ParsedEntry => e !== null);
+
+  return { sectionA_raw, sectionB, sectionC_raw };
+}
+
+function filterEntries(
+  entries: ParsedEntry[],
+  skill: string | undefined,
+  limit: number | undefined,
+): ParsedEntry[] {
+  let result = entries;
+  if (skill) result = result.filter((e) => e.skill === skill);
+  if (limit && limit > 0) result = result.slice(0, limit);
+  return result;
+}
+
+function readCmd(opts: ParsedArgs): void {
+  const sectionFilter = getString(opts, 'section');
+  const skillFilter = getString(opts, 'skill');
+  const limitStr = getString(opts, 'limit');
+  const limit = limitStr ? parseInt(limitStr, 10) : undefined;
+
+  const data = readAllLearnings();
+
+  if (sectionFilter === 'A' || sectionFilter === 'a') {
+    console.log(JSON.stringify({ sectionA_raw: data.sectionA_raw }, null, 2));
+    return;
+  }
+  if (sectionFilter === 'B' || sectionFilter === 'b') {
+    console.log(
+      JSON.stringify({ sectionB: filterEntries(data.sectionB, skillFilter, limit) }, null, 2),
+    );
+    return;
+  }
+  if (sectionFilter === 'C' || sectionFilter === 'c') {
+    console.log(JSON.stringify({ sectionC_raw: data.sectionC_raw }, null, 2));
+    return;
+  }
+
+  // No section filter → return everything (with skill/limit applied to B)
+  const out: LearningsData = {
+    sectionA_raw: data.sectionA_raw,
+    sectionB: filterEntries(data.sectionB, skillFilter, limit),
+    sectionC_raw: data.sectionC_raw,
+  };
+  console.log(JSON.stringify(out, null, 2));
+}
+
 function formatObservation(
   skill: string,
   headline: string,
@@ -157,7 +262,9 @@ function formatObservation(
 }
 
 function printHelp(): void {
-  console.log(`Usage: tsx src/learnings.ts append <heartbeat|observation> [options]
+  console.log(`Usage:
+  tsx src/learnings.ts append <heartbeat|observation> [options]
+  tsx src/learnings.ts read [--section A|B|C] [--limit N] [--skill <name>]
 
 Append heartbeat (default end-of-run entry, one-line summary):
   tsx src/learnings.ts append heartbeat --skill <skill> --text "<one-liner>"
@@ -165,6 +272,11 @@ Append heartbeat (default end-of-run entry, one-line summary):
 Append observation (when a genuine pattern was noticed):
   tsx src/learnings.ts append observation --skill <skill> --headline "..." \\
     --context "..." --observed "..." --apply "..."
+
+Read (parse learnings.md into structured JSON — used by the dashboard UI):
+  tsx src/learnings.ts read                              # all sections
+  tsx src/learnings.ts read --section B --limit 20       # last 20 entries of Section B
+  tsx src/learnings.ts read --section B --skill inbox-classifier
 
 Skills should append exactly one entry per run: observation if something notable was
 seen, otherwise heartbeat. Entries land in knowledge/learnings.md Section B (newest
@@ -176,6 +288,13 @@ const [, , command, subcommand, ...rest] = process.argv;
 
 if (!command || command === '--help' || command === '-h') {
   printHelp();
+  process.exit(0);
+}
+
+if (command === 'read') {
+  // For `read`, subcommand is actually the first option arg — put it back in the rest
+  const readArgs = subcommand !== undefined ? [subcommand, ...rest] : rest;
+  readCmd(parseArgs(readArgs));
   process.exit(0);
 }
 
