@@ -238,6 +238,7 @@ Four tabs: Pipeline, Performance, Skills, Learnings. Localhost-only, never deplo
 - [`program.md`](program.md) — universal skill constraints + teardown rules
 - [`knowledge/research-config.md`](knowledge/research-config.md) — configure the `research-outreach` audit type
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to add a skill, a tool, or a new harness adapter
+- [`ROADMAP.md`](ROADMAP.md) — known gaps vs mature outbound tooling (scoring, meeting booking, sequences, deep CRM)
 - [`CHANGELOG.md`](CHANGELOG.md) — version history
 
 ---
