@@ -11,7 +11,15 @@ ui/next-env.d.ts
 .env.local
 
 # Runtime data (contains real contacts — never commit)
+# v2.6+: SQLite-backed tracker + WAL sidecars
+tracker.db
+tracker.db-wal
+tracker.db-shm
+# Legacy TSV tracker (pre-v2.6). Kept ignored in case an old checkout or
+# an `export` command writes one.
 table.tsv
+# Migrated TSV snapshot — kept for rollback after the one-time import
+table.tsv.legacy-*
 output/errors.log
 output/preview.json
 output/already_drafted.json

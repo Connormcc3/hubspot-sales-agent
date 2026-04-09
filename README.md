@@ -74,7 +74,7 @@ flowchart TB
         Web["Web (for research)"]
     end
 
-    Tracker["table.tsv\n(13-column tracker)"]
+    Tracker["tracker.db\n(SQLite, 13 columns)"]
 
     Human -->|natural language| Harness
     Harness --> Shared
@@ -120,9 +120,10 @@ hubspot-sales-agent/
 │   ├── invoke-skill.md           # All skill invocations + workflows
 │   └── run-followup.md           # Quick-start prompts
 ├── src/
-│   ├── tracker.ts                # TSV tracker CLI (read/exists/append/update)
+│   ├── db.ts                     # Shared SQLite data layer (schema, prepared statements, TSV→SQLite import)
+│   ├── tracker.ts                # Tracker CLI — thin wrapper over db.ts (read/rows/exists/append/update/export)
 │   ├── learnings.ts              # Learnings CLI (append heartbeat/observation to learnings.md Section B)
-│   ├── performance.ts            # Performance math (reads table.tsv, computes per-segment contrasts → JSON for performance-review)
+│   ├── performance.ts            # Performance math (queries tracker.db via db.ts, computes per-segment contrasts → JSON for performance-review)
 │   └── tools/                    # Harness-agnostic CLI wrappers
 │       ├── hubspot.ts            # HubSpot REST API
 │       ├── gmail.ts              # Gmail API (OAuth)
@@ -139,7 +140,8 @@ hubspot-sales-agent/
 │   ├── src/components/           # 4-tab dashboard (pipeline / performance / skills / learnings)
 │   ├── src/lib/                  # cli.ts execFile wrapper, skills templates, types
 │   └── package.json              # Separate install — see "Dashboard UI" section below
-├── table.tsv                     # Single source of truth (13 columns, gitignored)
+├── tracker.db                    # Single source of truth (SQLite, gitignored) — as of v2.6
+├── table.tsv.legacy-*            # One-time snapshot of the pre-v2.6 TSV tracker (kept for rollback, gitignored)
 ├── .env.example                  # Credential template
 ├── package.json
 └── README.md                     # You are here
@@ -415,12 +417,12 @@ Neither mode sends emails or touches state directly. Both paths end with you rev
 
 The agent has two state files — both living in the repo, both are single sources of truth for their concern:
 
-1. **`table.tsv`** — per-contact tracker (13 columns). Every draft, skip, error, reply classification lives here. Used by every skill for deduplication and reply tracking. Written via `src/tracker.ts`. **Read by `src/performance.ts`** for weekly performance-review analysis.
+1. **`tracker.db`** — per-contact tracker (SQLite, 13 columns). Every draft, skip, error, reply classification lives here. Used by every skill for deduplication and reply tracking. Written via `src/tracker.ts` (thin CLI over `src/db.ts`), queried by `src/performance.ts` via an indexed range scan on `drafted_at`. **As of v2.6:** backed by SQLite (`better-sqlite3`) — fixes field escaping (tabs/newlines no longer corrupt rows), concurrency (WAL mode), and scales to tens of thousands of rows. Pre-v2.6 was a flat `table.tsv` file; on first v2.6 run, the TSV is imported into SQLite and renamed to `table.tsv.legacy-<timestamp>` for rollback. Dump the current state to TSV or JSON on demand via `npx tsx src/tracker.ts export`.
 2. **`knowledge/learnings.md`** — living memory (3 sections). Cheat sheets, running log, distilled patterns. Read by every skill at start, written via `src/learnings.ts` at end. See the "Learnings memory" section above.
 
 Weekly performance reports land in **`output/performance/<date>.md`** — written by `performance-review`, human reviews them to decide which Section C rules to promote.
 
-### table.tsv columns (13 total)
+### Tracker columns (13 total, SQLite schema in `src/db.ts`)
 
 | Column | Description | Written By |
 |--------|-------------|-----------|
@@ -436,12 +438,14 @@ Weekly performance reports land in **`output/performance/<date>.md`** — writte
 | `reply_draft_id` | Gmail draft ID of reply draft | inbox-classifier |
 | `hubspot_status_after` | HubSpot lead status after sync | inbox-classifier |
 
-**Tracker CLI:**
+**Tracker CLI** (same contract pre- and post-v2.6):
 ```bash
 npx tsx src/tracker.ts read                                           # JSON array of all emails
-npx tsx src/tracker.ts exists <email>                                 # "true" or "false"
+npx tsx src/tracker.ts rows                                           # JSON array of full row objects
+npx tsx src/tracker.ts exists <email>                                 # "true" or "false" (case-insensitive)
 npx tsx src/tracker.ts append "<tab-separated-row>"                   # add a new row
 npx tsx src/tracker.ts update <email> <classification> [draft_id]    # set reply fields
+npx tsx src/tracker.ts export [--format tsv|json] [--out path]        # dump current DB state (v2.6+)
 ```
 
 **Learnings CLI** (written by skills at end-of-run, see `program.md` universal teardown rule):

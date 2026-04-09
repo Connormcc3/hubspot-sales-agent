@@ -2,14 +2,20 @@
 /**
  * TSV tracking helper for table.tsv — Sales Agent Single Source of Truth.
  *
+ * As of v2.6, storage is SQLite (tracker.db) via src/db.ts. The CLI surface
+ * below is byte-identical to the v2.5 TSV implementation — every skill,
+ * prompt, and caller keeps working without changes. A one-time import from
+ * the legacy table.tsv happens on first invocation.
+ *
  * Usage:
  *   tsx src/tracker.ts read                                              → print all emails (JSON array)
  *   tsx src/tracker.ts rows                                              → print all rows as JSON array of objects
  *   tsx src/tracker.ts exists <email>                                    → print "true" or "false"
  *   tsx src/tracker.ts append <tsv-row>                                  → append a tab-separated row
  *   tsx src/tracker.ts update <email> <classification> [draft_id] [hs]   → set reply fields for existing row
+ *   tsx src/tracker.ts export [--format tsv|json] [--out path]           → dump DB to stdout or a file (v2.6)
  *
- * TSV columns (13 total):
+ * TSV columns (13 total, preserved from v2.5):
  *   1.  email
  *   2.  firstname
  *   3.  lastname
@@ -25,156 +31,67 @@
  *  13.  hubspot_status_after    (HubSpot lead status after sync, if changed)
  */
 
-import { readFileSync, writeFileSync, existsSync, appendFileSync } from 'fs';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { writeFileSync } from 'fs';
+import {
+  allRows,
+  allEmails,
+  emailExists,
+  appendRow,
+  updateReplyFields,
+  COLUMNS,
+  type RowObject,
+} from './db.ts';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const TABLE_PATH = resolve(__dirname, '../table.tsv');
+// ---------------- Small CLI flag parser (used only by `export`) ----------------
 
-const COLUMNS = [
-  'email',
-  'firstname',
-  'lastname',
-  'company',
-  'lead_status',
-  'notes_summary',
-  'draft_id',
-  'status',
-  'drafted_at',
-  'reply_received_at',
-  'reply_classification',
-  'reply_draft_id',
-  'hubspot_status_after',
-] as const;
-
-const Col = {
-  Email: 0,
-  FirstName: 1,
-  LastName: 2,
-  Company: 3,
-  LeadStatus: 4,
-  NotesSummary: 5,
-  DraftId: 6,
-  Status: 7,
-  DraftedAt: 8,
-  ReplyReceivedAt: 9,
-  ReplyClassification: 10,
-  ReplyDraftId: 11,
-  HubSpotStatusAfter: 12,
-} as const;
-
-const HEADER = COLUMNS.join('\t');
-const NUM_COLS = COLUMNS.length;
-
-type Row = string[];
-
-function readAllLines(): string[] {
-  if (!existsSync(TABLE_PATH)) return [];
-  return readFileSync(TABLE_PATH, 'utf-8').split('\n').filter(Boolean);
-}
-
-function readRows(): Row[] {
-  const lines = readAllLines();
-  if (lines.length === 0) return [];
-  // skip header
-  return lines.slice(1).map((line) => {
-    const cols = line.split('\t');
-    // pad short rows (legacy 9-column rows) to current length
-    while (cols.length < NUM_COLS) cols.push('');
-    return cols;
-  });
-}
-
-function getEmails(): Set<string> {
-  return new Set(readRows().map((cols) => (cols[Col.Email] || '').trim().toLowerCase()));
-}
-
-type RowObject = Record<(typeof COLUMNS)[number], string>;
-
-function rowsAsObjects(): RowObject[] {
-  return readRows().map((cols) => {
-    const obj = {} as RowObject;
-    for (let i = 0; i < COLUMNS.length; i++) {
-      obj[COLUMNS[i]] = cols[i] || '';
+function parseFlags(args: string[]): Record<string, string> {
+  const flags: Record<string, string> = {};
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (!a.startsWith('--')) continue;
+    const key = a.slice(2);
+    const next = args[i + 1];
+    if (next && !next.startsWith('--')) {
+      flags[key] = next;
+      i++;
+    } else {
+      flags[key] = 'true';
     }
-    return obj;
-  });
-}
-
-function emailExists(email: string): boolean {
-  return getEmails().has(email.trim().toLowerCase());
-}
-
-function ensureFile(): void {
-  if (!existsSync(TABLE_PATH)) {
-    writeFileSync(TABLE_PATH, HEADER + '\n', 'utf-8');
   }
+  return flags;
 }
 
-function appendRow(row: string): void {
-  ensureFile();
-  // Normalize email (first column) and pad to NUM_COLS
-  const cols = row.split('\t');
-  if (cols[Col.Email]) cols[Col.Email] = cols[Col.Email].trim().toLowerCase();
-  while (cols.length < NUM_COLS) cols.push('');
-  appendFileSync(TABLE_PATH, cols.join('\t') + '\n', 'utf-8');
+// ---------------- Export formatters ----------------
+
+/**
+ * TSV export has one caveat: fields containing tab or newline characters
+ * get those characters replaced with a single space. SQLite stores them
+ * correctly, but TSV as a wire format can't represent them. Use JSON export
+ * for a lossless round-trip.
+ */
+function rowsToTsv(rows: RowObject[]): string {
+  const header = COLUMNS.join('\t');
+  const bodyLines = rows.map((row) =>
+    COLUMNS.map((col) => (row[col] ?? '').replace(/[\t\n\r]/g, ' ')).join('\t'),
+  );
+  return [header, ...bodyLines].join('\n') + '\n';
 }
 
-function updateRow(
-  email: string,
-  classification: string,
-  replyDraftId: string = '',
-  hubspotStatusAfter: string = '',
-): void {
-  ensureFile();
-  const lines = readAllLines();
-  if (lines.length === 0) {
-    console.error('update: table.tsv is empty — nothing to update');
-    process.exit(1);
-  }
-
-  const targetEmail = email.trim().toLowerCase();
-  const now = new Date().toISOString();
-
-  let foundIdx = -1;
-  const updatedLines = lines.map((line, idx) => {
-    if (idx === 0) return line; // header
-
-    const cols = line.split('\t');
-    while (cols.length < NUM_COLS) cols.push('');
-
-    if ((cols[Col.Email] || '').trim().toLowerCase() === targetEmail) {
-      foundIdx = idx;
-      cols[Col.ReplyReceivedAt] = now;
-      cols[Col.ReplyClassification] = classification;
-      if (replyDraftId) cols[Col.ReplyDraftId] = replyDraftId;
-      if (hubspotStatusAfter) cols[Col.HubSpotStatusAfter] = hubspotStatusAfter;
-      return cols.join('\t');
-    }
-
-    return cols.join('\t');
-  });
-
-  if (foundIdx === -1) {
-    console.error(`update: no row found for email "${targetEmail}"`);
-    process.exit(1);
-  }
-
-  writeFileSync(TABLE_PATH, updatedLines.join('\n') + '\n', 'utf-8');
-  console.log(`Updated: ${targetEmail} → ${classification}`);
+function rowsToJson(rows: RowObject[]): string {
+  return JSON.stringify(rows, null, 2);
 }
+
+// ---------------- CLI dispatch ----------------
 
 const [, , command, ...args] = process.argv;
 
 switch (command) {
   case 'read': {
-    const emails = [...getEmails()];
-    console.log(JSON.stringify(emails, null, 2));
+    console.log(JSON.stringify(allEmails(), null, 2));
     break;
   }
   case 'rows': {
-    console.log(JSON.stringify(rowsAsObjects(), null, 2));
+    console.log(JSON.stringify(allRows(), null, 2));
     break;
   }
   case 'exists': {
@@ -193,8 +110,9 @@ switch (command) {
       console.error('Usage: tracker.ts append <tsv-row>');
       process.exit(1);
     }
-    appendRow(row);
-    console.log('Appended:', row.split('\t')[0]);
+    const cols = row.split('\t');
+    appendRow(cols);
+    console.log('Appended:', cols[0]);
     break;
   }
   case 'update': {
@@ -206,12 +124,44 @@ switch (command) {
       );
       process.exit(1);
     }
-    updateRow(email, classification, replyDraftId, hubspotStatusAfter);
+    const ok = updateReplyFields(
+      email,
+      classification,
+      replyDraftId ?? '',
+      hubspotStatusAfter ?? '',
+    );
+    if (!ok) {
+      console.error(`update: no row found for email "${email.trim().toLowerCase()}"`);
+      process.exit(1);
+    }
+    console.log(`Updated: ${email.trim().toLowerCase()} → ${classification}`);
+    break;
+  }
+  case 'export': {
+    const flags = parseFlags(args);
+    const format = flags.format ?? 'tsv';
+    const outPath = flags.out;
+
+    if (format !== 'tsv' && format !== 'json') {
+      console.error(`Unknown format: ${format}. Use --format tsv or --format json.`);
+      process.exit(1);
+    }
+
+    const rows = allRows();
+    const output = format === 'json' ? rowsToJson(rows) : rowsToTsv(rows);
+
+    if (outPath) {
+      writeFileSync(outPath, output, 'utf-8');
+      console.error(`Exported ${rows.length} rows to ${outPath} (${format}).`);
+    } else {
+      process.stdout.write(output);
+      if (format === 'json') process.stdout.write('\n');
+    }
     break;
   }
   default:
     console.error(
-      'Usage: tsx src/tracker.ts read | rows | exists <email> | append <tsv-row> | update <email> <classification> [reply_draft_id] [hubspot_status_after]',
+      'Usage: tsx src/tracker.ts read | rows | exists <email> | append <tsv-row> | update <email> <classification> [reply_draft_id] [hubspot_status_after] | export [--format tsv|json] [--out path]',
     );
     process.exit(1);
 }

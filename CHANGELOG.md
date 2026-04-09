@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.6.0] - 2026-04-10
+
+### Changed
+- **Tracker storage migrated from flat TSV to SQLite** (via `better-sqlite3`). Fixes three long-standing issues:
+  1. **Field safety** — stored values can now contain tabs or newlines without corrupting rows. (Pre-v2.6: any `\t` or `\n` in a field would silently misalign or break the row.) Note: the CLI `append` command still accepts tab-separated input, so literal tabs in a field value passed through the CLI still get split on that boundary — the storage-level fix matters most for programmatic access and eliminates silent corruption from non-obvious sources.
+  2. **Concurrency** — `updateRow()` is no longer a read-modify-write race. WAL journal mode allows non-blocking reads during writes, and writes are atomic. You can now run multiple skills against the tracker in parallel without data loss.
+  3. **Scale** — `emailExists()` is O(log n) instead of O(n) per check. `performance.ts` windowing uses an indexed range scan on `drafted_at` instead of parsing the whole file. Comfortable at tens of thousands of rows.
+- **CLI interface is identical** to v2.5 — every skill, prompt, and caller keeps working. `tsx src/tracker.ts read | rows | exists | append | update` all produce byte-identical output.
+- `src/performance.ts` now queries the tracker via `rowsInWindow()` from `src/db.ts` instead of reading `table.tsv` directly. Output JSON shape unchanged.
+
+### Added
+- **`src/db.ts`** — new shared SQLite data layer. Opens `tracker.db` with WAL + `foreign_keys = ON`, runs schema + indexes idempotently, performs a one-time TSV → SQLite import, and exposes a typed data-layer API (`allRows`, `allEmails`, `emailExists`, `rowsInWindow`, `appendRow`, `updateReplyFields`). Prepared statements are reused at module scope.
+- **Schema with 3 indexes:** `idx_tracker_drafted_at` (performance windowing), `idx_tracker_status` (UI filter pills), `idx_tracker_classification` (inbox-classifier queries). `email` is `PRIMARY KEY COLLATE NOCASE` — case-insensitive dedup for free.
+- **New `tracker.ts export` command:** `tsx src/tracker.ts export [--format tsv|json] [--out path]` — dumps the current DB state to stdout or a file. Use this to open in a spreadsheet (replaces the pre-v2.6 "just open table.tsv" workflow). TSV export strips tabs/newlines in field values (replaces with spaces); JSON export is lossless.
+- **`better-sqlite3` dependency.** Native module — `npm install` will fetch a prebuilt binary on most platforms, or compile via node-gyp as a fallback. No change to `engines.node` (still `>=18`).
+
+### Migration
+- On first run of any CLI that imports `src/db.ts`, if `tracker.db` doesn't exist but `table.tsv` does: parse the TSV (skipping the header, padding short rows to 13 columns), `INSERT` every row inside a single transaction (with `ON CONFLICT(email) DO NOTHING` for safety), then rename `table.tsv` → `table.tsv.legacy-<ISO timestamp>` for rollback. The legacy file is **not deleted** — remove it manually once you've verified the new tracker.
+- If the transaction fails mid-way: the DB rolls back to empty and the legacy file is left untouched. The next invocation retries cleanly.
+- If both `tracker.db` (populated) and `table.tsv` are present: the import is skipped. DB wins. The TSV sits harmlessly until the user removes it.
+- **Rollback:** `git checkout v2.5` + rename `table.tsv.legacy-<timestamp>` back to `table.tsv` + delete `tracker.db*` files + `npm install`. Clean reversion to the previous version.
+
+### Docs
+- README: updated mermaid tracker node, project structure tree, "State files" section (tracker.db + explanatory prose), tracker CLI block (adds `rows` and `export` commands).
+- CONTRIBUTING: tracker.ts description updated to reference `src/db.ts`.
+- SECURITY: tracker.db + legacy TSV gitignore clarification.
+- CHANGELOG historical entries for v2.0-v2.5 are unchanged (frozen).
+
+### What's unchanged
+- All 7 skills (no prose changes). All prompts. `knowledge/learnings.md` + `learnings.md` CLI. Every `src/tools/*.ts`. Every UI component, API route, and type in `ui/src/`. The `TrackerRow` interface in `ui/src/lib/types.ts` already matched the new SQLite schema exactly (verified via code audit pre-migration).
+
 ## [2.5.0] - 2026-04-09
 
 ### Added

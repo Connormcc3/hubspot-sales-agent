@@ -23,7 +23,7 @@ Thanks for your interest in contributing!
   - `learnings.md` — track what works
   - `research-config.md` — define your research approach
 - **`prompts/`** — Copy-paste invocation prompts
-- **`src/tracker.ts`** — TSV tracking CLI
+- **`src/db.ts`** + **`src/tracker.ts`** — SQLite-backed tracker data layer + CLI (was flat TSV pre-v2.6)
 - **`src/tools/`** — Harness-agnostic CLI wrappers (HubSpot, Gmail, webfetch)
 - **`AGENTS.md`** — Harness compatibility guide
 

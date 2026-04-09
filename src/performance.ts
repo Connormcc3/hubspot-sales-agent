@@ -1,7 +1,12 @@
 #!/usr/bin/env node
 /**
- * Performance math tool — reads table.tsv, filters to a review window, computes
- * per-segment reply/positive rates, and surfaces contrasts between segments.
+ * Performance math tool — reads the tracker, filters to a review window,
+ * computes per-segment reply/positive rates, and surfaces contrasts between
+ * segments.
+ *
+ * As of v2.6, the tracker is SQLite (tracker.db) and this tool queries it via
+ * `rowsInWindow(start, end)` from src/db.ts — an indexed range scan on
+ * `drafted_at`. Pre-v2.6 it parsed table.tsv directly.
  *
  * Deterministic math so the weekly report is reproducible. The skill agent
  * (skills/performance-review.md) calls this, interprets the JSON, fetches
@@ -22,30 +27,7 @@
  *   PROPOSABLE_EVIDENCE = 10 — bucket_n + other_n ≥ this → propose a Section C rule
  */
 
-import { readFileSync, existsSync } from 'fs';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const TABLE_PATH = resolve(__dirname, '../table.tsv');
-
-const NUM_COLS = 13;
-
-const Col = {
-  Email: 0,
-  FirstName: 1,
-  LastName: 2,
-  Company: 3,
-  LeadStatus: 4,
-  NotesSummary: 5,
-  DraftId: 6,
-  Status: 7,
-  DraftedAt: 8,
-  ReplyReceivedAt: 9,
-  ReplyClassification: 10,
-  ReplyDraftId: 11,
-  HubSpotStatusAfter: 12,
-} as const;
+import { rowsInWindow, type RowObject } from './db.ts';
 
 const MIN_BUCKET_SIZE = 5;
 const MIN_DELTA = 0.15;
@@ -161,18 +143,7 @@ function getString(opts: ParsedArgs, key: string): string | undefined {
   return typeof v === 'string' ? v : undefined;
 }
 
-function readTableRows(): string[][] {
-  if (!existsSync(TABLE_PATH)) return [];
-  const lines = readFileSync(TABLE_PATH, 'utf-8').split('\n').filter(Boolean);
-  if (lines.length <= 1) return []; // only header or empty
-  return lines.slice(1).map((line) => {
-    const cols = line.split('\t');
-    while (cols.length < NUM_COLS) cols.push('');
-    return cols;
-  });
-}
-
-function inferSkill(notesSummary: string, rowStatus: string, hasReplyClassification: boolean): SkillTag {
+function inferSkill(notesSummary: string, rowStatus: string): SkillTag {
   const trimmed = notesSummary.trim();
   if (trimmed.startsWith('RES:')) return 'research-outreach';
   if (trimmed.startsWith('COMPOSE:')) return 'compose-reply';
@@ -218,31 +189,30 @@ function resolveWindow(opts: ParsedArgs): { start: Date; end: Date; days: number
   return { start, end, days };
 }
 
-function extractFeatures(rows: string[][], start: Date, end: Date): Feature[] {
+/**
+ * Maps windowed rows to Feature records. `rowsInWindow()` already filtered
+ * by drafted_at via the SQLite index, but we still validate each row's
+ * drafted_at as a defensive check — if a row has a malformed timestamp,
+ * lexicographic comparison in SQL could include it unexpectedly.
+ */
+function extractFeatures(rows: RowObject[]): Feature[] {
   const features: Feature[] = [];
-  for (const cols of rows) {
-    const draftedAtStr = cols[Col.DraftedAt] || '';
-    const draftedAt = parseIsoOrNull(draftedAtStr);
-    // Keep rows with no drafted_at only if they have a reply_received_at in the window
-    // (rare edge case). Otherwise require drafted_at to fall within window.
-    if (!draftedAt) continue;
-    if (draftedAt < start || draftedAt > end) continue;
+  for (const row of rows) {
+    if (!parseIsoOrNull(row.drafted_at)) continue;
 
-    const leadStatus = (cols[Col.LeadStatus] || '(unset)').trim() || '(unset)';
-    const rowStatus = (cols[Col.Status] || '').trim();
-    const classification = (cols[Col.ReplyClassification] || '').trim();
+    const leadStatus = (row.lead_status || '(unset)').trim() || '(unset)';
+    const rowStatus = (row.status || '').trim();
+    const classification = (row.reply_classification || '').trim();
     const hasReply = classification.length > 0;
     const outcome: Outcome = hasReply ? classification : 'no_reply';
 
-    const skill = inferSkill(cols[Col.NotesSummary] || '', rowStatus, hasReply);
-
     features.push({
-      email: (cols[Col.Email] || '').trim(),
+      email: (row.email || '').trim(),
       leadStatus,
-      skill,
+      skill: inferSkill(row.notes_summary || '', rowStatus),
       rowStatus,
-      draftId: (cols[Col.DraftId] || '').trim(),
-      draftedAt: draftedAtStr,
+      draftId: (row.draft_id || '').trim(),
+      draftedAt: row.drafted_at,
       outcome,
       isPositive: hasReply && isPositiveClassification(classification),
       isNegative: hasReply && isNegativeClassification(classification),
@@ -413,8 +383,8 @@ function round3(n: number): number {
 
 function buildReport(opts: ParsedArgs): PerformanceReport {
   const { start, end, days } = resolveWindow(opts);
-  const rows = readTableRows();
-  const features = extractFeatures(rows, start, end);
+  const rows = rowsInWindow(start.toISOString(), end.toISOString());
+  const features = extractFeatures(rows);
 
   const totals = {
     drafts: features.length,
@@ -474,8 +444,9 @@ function buildReport(opts: ParsedArgs): PerformanceReport {
 function printHelp(): void {
   console.log(`Usage: tsx src/performance.ts [--window <days>] [--since <ISO>] [--until <ISO>]
 
-Reads table.tsv, filters draft rows to a review window, computes per-segment
-reply/positive rates, and surfaces contrasts. Emits JSON to stdout.
+Queries the tracker (tracker.db via src/db.ts), filters draft rows to a
+review window, computes per-segment reply/positive rates, and surfaces
+contrasts. Emits JSON to stdout.
 
 Options:
   --window <days>   Review window size in days (default: 7)
