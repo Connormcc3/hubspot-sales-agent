@@ -23,7 +23,7 @@ Thanks for your interest in contributing!
   - `learnings.md` — track what works
   - `research-config.md` — define your research approach
 - **`prompts/`** — Copy-paste invocation prompts
-- **`src/tracker.js`** — TSV tracking CLI
+- **`src/tracker.ts`** — TSV tracking CLI
 - **`src/tools/`** — Harness-agnostic CLI wrappers (HubSpot, Gmail, webfetch)
 - **`AGENTS.md`** — Harness compatibility guide
 
@@ -38,24 +38,24 @@ Thanks for your interest in contributing!
 
 ### Adding a New Tool
 
-1. Create `src/tools/your-tool.js` as an ES module
+1. Create `src/tools/your-tool.ts` as an ES module
 2. Load credentials from `.env` via `dotenv`
 3. Output JSON to stdout (parseable by any harness)
 4. Include `--help` flag with usage examples
-5. Follow the patterns in `hubspot.js` and `gmail.js`
+5. Follow the patterns in `hubspot.ts` and `gmail.ts`
 
 ### Modifying Existing Behavior
 
 - Change agent loop logic → edit `program.md` or the specific `skills/<skill>.md`
 - Change email rules → edit `CLAUDE.md`
-- Change tracking → edit `src/tracker.js` (carefully — it's the single source of truth)
+- Change tracking → edit `src/tracker.ts` (carefully — it's the single source of truth)
 
 ## Testing
 
 1. Use **Preview Mode** for safe testing — no Gmail drafts created
 2. Use a test HubSpot workspace or a small subset of contacts
-3. Verify CLI tools work standalone: `node src/tools/hubspot.js --help`
-4. Test the tracker: `node src/tracker.js read`
+3. Verify CLI tools work standalone: `npx tsx src/tools/hubspot.ts --help`
+4. Test the tracker: `npx tsx src/tracker.ts read`
 
 ## Submitting Changes
 

@@ -1,0 +1,217 @@
+#!/usr/bin/env node
+/**
+ * Learnings CLI — append entries to knowledge/learnings.md Section B (Running Log).
+ *
+ * Every skill run ends with one entry: either a heartbeat (default) or an observation
+ * (if a genuine pattern was noticed: ≥3 similar signals, unexpected cluster, or a segment
+ * behaving differently from Section A rules).
+ *
+ * Usage:
+ *   tsx src/learnings.ts append heartbeat --skill <skill> --text "<one-liner>"
+ *   tsx src/learnings.ts append observation --skill <skill> --headline "..." --context "..." --observed "..." --apply "..."
+ *
+ * Behavior:
+ *   - Entries are inserted right after the <!-- LEARNINGS_LOG_START --> marker (newest first).
+ *   - Section B is capped at MAX_ENTRIES entries. When exceeded, the oldest entries rotate
+ *     to knowledge/learnings-archive.md.
+ */
+
+import { readFileSync, writeFileSync, existsSync, appendFileSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const LEARNINGS_PATH = resolve(__dirname, '../knowledge/learnings.md');
+const ARCHIVE_PATH = resolve(__dirname, '../knowledge/learnings-archive.md');
+
+const LOG_START = '<!-- LEARNINGS_LOG_START -->';
+const LOG_END = '<!-- LEARNINGS_LOG_END -->';
+const MAX_ENTRIES = 100;
+
+interface ParsedArgs {
+  [key: string]: string | true | undefined;
+}
+
+function parseArgs(args: string[]): ParsedArgs {
+  const parsed: ParsedArgs = {};
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a.startsWith('--')) {
+      const key = a.slice(2);
+      const next = args[i + 1];
+      const val: string | true = next && !next.startsWith('--') ? next : true;
+      parsed[key] = val;
+      if (val !== true) i++;
+    }
+  }
+  return parsed;
+}
+
+function getString(opts: ParsedArgs, key: string): string | undefined {
+  const v = opts[key];
+  return typeof v === 'string' ? v : undefined;
+}
+
+function todayISODate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function readLearnings(): string {
+  if (!existsSync(LEARNINGS_PATH)) {
+    console.error(`Error: ${LEARNINGS_PATH} not found. Expected the restructured learnings.md with running-log markers.`);
+    process.exit(1);
+  }
+  return readFileSync(LEARNINGS_PATH, 'utf-8');
+}
+
+interface LogSection {
+  before: string;
+  log: string;
+  after: string;
+}
+
+function getLogSection(content: string): LogSection {
+  const startIdx = content.indexOf(LOG_START);
+  const endIdx = content.indexOf(LOG_END);
+  if (startIdx === -1 || endIdx === -1 || endIdx < startIdx) {
+    console.error(
+      `Error: Running log markers not found in learnings.md. Expected ${LOG_START} ... ${LOG_END}.`,
+    );
+    process.exit(1);
+  }
+  const before = content.slice(0, startIdx + LOG_START.length);
+  const log = content.slice(startIdx + LOG_START.length, endIdx);
+  const after = content.slice(endIdx);
+  return { before, log, after };
+}
+
+function splitEntries(log: string): string[] {
+  // Entries start with '### ' headings. Split the log into per-entry blocks.
+  const lines = log.split('\n');
+  const entries: string[] = [];
+  let current: string[] = [];
+  for (const line of lines) {
+    if (line.startsWith('### ')) {
+      if (current.length > 0 && current.some((l) => l.trim())) {
+        entries.push(current.join('\n').trim());
+      }
+      current = [line];
+    } else {
+      current.push(line);
+    }
+  }
+  if (current.length > 0 && current.some((l) => l.trim())) {
+    const tail = current.join('\n').trim();
+    if (tail) entries.push(tail);
+  }
+  return entries;
+}
+
+function archiveEntries(entries: string[]): void {
+  if (entries.length === 0) return;
+  const header = `\n## Archived ${todayISODate()}\n\n`;
+  const body = entries.join('\n\n') + '\n';
+  if (!existsSync(ARCHIVE_PATH)) {
+    const intro =
+      '# Learnings Archive\n\n> Older Section B entries rotated from `knowledge/learnings.md` when the running-log cap was exceeded.\n';
+    writeFileSync(ARCHIVE_PATH, intro + header + body, 'utf-8');
+  } else {
+    appendFileSync(ARCHIVE_PATH, header + body, 'utf-8');
+  }
+}
+
+function appendEntry(newEntry: string): void {
+  const content = readLearnings();
+  const { before, log, after } = getLogSection(content);
+  const existing = splitEntries(log);
+
+  // Newest first
+  const allEntries = [newEntry, ...existing];
+
+  // Rotate oldest entries past the cap
+  const keep = allEntries.slice(0, MAX_ENTRIES);
+  const archive = allEntries.slice(MAX_ENTRIES);
+  archiveEntries(archive);
+
+  const newLog = keep.length > 0 ? '\n\n' + keep.join('\n\n') + '\n\n' : '\n\n';
+  writeFileSync(LEARNINGS_PATH, before + newLog + after, 'utf-8');
+}
+
+function formatHeartbeat(skill: string, text: string): string {
+  return `### ${todayISODate()} · ${skill} · heartbeat\n- ${text}`;
+}
+
+function formatObservation(
+  skill: string,
+  headline: string,
+  context: string,
+  observed: string,
+  apply: string,
+): string {
+  return (
+    `### ${todayISODate()} · ${skill} · ${headline}\n` +
+    `- **Context:** ${context}\n` +
+    `- **Observed:** ${observed}\n` +
+    `- **Apply next time:** ${apply}`
+  );
+}
+
+function printHelp(): void {
+  console.log(`Usage: tsx src/learnings.ts append <heartbeat|observation> [options]
+
+Append heartbeat (default end-of-run entry, one-line summary):
+  tsx src/learnings.ts append heartbeat --skill <skill> --text "<one-liner>"
+
+Append observation (when a genuine pattern was noticed):
+  tsx src/learnings.ts append observation --skill <skill> --headline "..." \\
+    --context "..." --observed "..." --apply "..."
+
+Skills should append exactly one entry per run: observation if something notable was
+seen, otherwise heartbeat. Entries land in knowledge/learnings.md Section B (newest
+first). The oldest entries rotate to knowledge/learnings-archive.md when Section B
+exceeds ${MAX_ENTRIES} entries.`);
+}
+
+const [, , command, subcommand, ...rest] = process.argv;
+
+if (!command || command === '--help' || command === '-h') {
+  printHelp();
+  process.exit(0);
+}
+
+if (command !== 'append') {
+  console.error(`Unknown command: ${command}. Run with --help for usage.`);
+  process.exit(1);
+}
+
+const opts = parseArgs(rest);
+
+if (subcommand === 'heartbeat') {
+  const skill = getString(opts, 'skill');
+  const text = getString(opts, 'text');
+  if (!skill || !text) {
+    console.error('Missing --skill or --text. Run with --help for usage.');
+    process.exit(1);
+  }
+  appendEntry(formatHeartbeat(skill, text));
+  console.log(`Appended heartbeat: ${skill}`);
+} else if (subcommand === 'observation') {
+  const skill = getString(opts, 'skill');
+  const headline = getString(opts, 'headline');
+  const context = getString(opts, 'context');
+  const observed = getString(opts, 'observed');
+  const apply = getString(opts, 'apply');
+  if (!skill || !headline || !context || !observed || !apply) {
+    console.error(
+      'Missing one of: --skill, --headline, --context, --observed, --apply. Run with --help for usage.',
+    );
+    process.exit(1);
+  }
+  appendEntry(formatObservation(skill, headline, context, observed, apply));
+  console.log(`Appended observation: ${skill} · ${headline}`);
+} else {
+  console.error(
+    `Unknown subcommand: ${subcommand ?? '(none)'}. Use 'heartbeat' or 'observation'. Run with --help for usage.`,
+  );
+  process.exit(1);
+}

@@ -1,6 +1,6 @@
 # Skill: follow-up-loop
 
-> **Architecture:** One of 4 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 6 skills in the Sales Agent. See `README.md` for the overview.
 > **Shared rules:** `CLAUDE.md` (greeting, tone, templates, signatures).
 
 ---
@@ -25,14 +25,16 @@ NEVER STOP on your own. Only manual interruption. When the work queue is exhaust
 
 Before starting the loop:
 
-1. **Read the tracker:** `node src/tracker.js read` → list of already-processed emails from `table.tsv`. This is your skip set.
+0. **Load learnings** — Read `knowledge/learnings.md`. Section A informs greeting/tone, the most recent ~20 entries of Section B flag recent patterns, Section C lists distilled rules. Universal requirement — see `program.md`.
+
+1. **Read the tracker:** `npx tsx src/tracker.ts read` → list of already-processed emails from `table.tsv`. This is your skip set.
 
 2. **Fetch HubSpot contacts:**
    - **Path A (MCP):** `mcp__claude_ai_HubSpot__search_crm_objects`
      - objectType: `contacts`
      - properties: `firstname`, `lastname`, `email`, `company`, `jobtitle`, `hs_lead_status`
      - Paginate: increase `offset` until `offset >= total`
-   - **Path B (CLI):** `node src/tools/hubspot.js contacts list --limit 100 --offset 0 --properties firstname,lastname,email,company,jobtitle,hs_lead_status`
+   - **Path B (CLI):** `npx tsx src/tools/hubspot.ts contacts list --limit 100 --offset 0 --properties firstname,lastname,email,company,jobtitle,hs_lead_status`
      - Repeat with increasing `--offset` until no more results
 
 3. **Build the work queue** — contacts where:
@@ -48,7 +50,7 @@ Before starting the loop:
 
 ### Step 1 — Read notes
 - **MCP:** `mcp__claude_ai_HubSpot__search_crm_objects` with `objectType=notes`, filter by contact ID, sort `hs_timestamp DESCENDING`
-- **CLI:** `node src/tools/hubspot.js notes list --contact-id <id> --limit 10`
+- **CLI:** `npx tsx src/tools/hubspot.ts notes list --contact-id <id> --limit 10`
 
 If no notes exist: generate email based on lead status only (skip Step 3).
 
@@ -82,14 +84,14 @@ Full rules in `CLAUDE.md`. Key points:
 
 ### Step 5 — Create Gmail draft
 - **MCP:** `mcp__claude_ai_Gmail__gmail_create_draft` with `to`, `subject`, `body`, `contentType=text/plain`
-- **CLI:** `node src/tools/gmail.js draft create --to <email> --subject "..." --body "..."`
+- **CLI:** `npx tsx src/tools/gmail.ts draft create --to <email> --subject "..." --body "..."`
 
 Save the returned `draftId`.
 
 ### Step 6 — Log to table.tsv
 Immediately after draft creation:
 ```bash
-node src/tracker.js append "<email>\t<firstname>\t<lastname>\t<company>\t<lead_status>\t<notes_summary>\t<draft_id>\tdrafted\t<ISO timestamp>"
+npx tsx src/tracker.ts append "<email>\t<firstname>\t<lastname>\t<company>\t<lead_status>\t<notes_summary>\t<draft_id>\tdrafted\t<ISO timestamp>"
 ```
 Do NOT skip this step. `notes_summary`: max 1 sentence.
 
@@ -124,3 +126,26 @@ Remaining: N contacts not yet processed
 ```
 
 If all contacts are processed: report completion and wait.
+
+---
+
+## Append to learnings (before stopping)
+
+Immediately after the final report, append one entry to `knowledge/learnings.md` Section B.
+
+**Default — heartbeat:**
+```bash
+npx tsx src/learnings.ts append heartbeat --skill follow-up-loop \
+  --text "Drafted X / skipped Y / errors Z. Mostly <dominant status> (N). <optional hint>"
+```
+
+**Observation (if ≥3 contacts showed the same signal, an unexpected cluster, or a segment behaving differently from Section A):**
+```bash
+npx tsx src/learnings.ts append observation --skill follow-up-loop \
+  --headline "<short pattern name>" \
+  --context "<what the batch was>" \
+  --observed "<what was noticed, quantitative if possible>" \
+  --apply "<concrete rule for next run>"
+```
+
+Write observation **instead of** the heartbeat (not both). See `program.md` for the universal teardown rule.

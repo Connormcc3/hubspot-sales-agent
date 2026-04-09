@@ -1,6 +1,6 @@
 # Skill: research-outreach
 
-> **Architecture:** One of 4 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 6 skills in the Sales Agent. See `README.md` for the overview.
 > **Shared rules:** `CLAUDE.md` (greeting, tone, signatures).
 > **Configuration:** Your research approach is defined in `knowledge/research-config.md`.
 > **Related skill:** `lead-recovery.md` provides the lead list, this skill executes the outreach.
@@ -30,10 +30,12 @@ When all leads in the input list are processed. On errors (offline domains, expi
 
 ## Setup
 
+0. **Load learnings** — Read `knowledge/learnings.md`. Section A informs greeting/tone, the most recent ~20 entries of Section B flag audit patterns you've seen before (recurring findings, what hooks landed), Section C lists distilled rules. Universal requirement — see `program.md`.
+
 1. **Receive lead list** (from the user or from `lead-recovery` output):
    - Format: `[{email, firstname, lastname, company, domain, lead_status, hubspot_id?}, ...]`
 
-2. **Tracker check:** `node src/tracker.js exists <email>` for each lead. If yes → decide whether research-outreach should still run (it's a **different** campaign than follow-up — a second outreach with a concrete hook is acceptable if the first was generic and got no reply).
+2. **Tracker check:** `npx tsx src/tracker.ts exists <email>` for each lead. If yes → decide whether research-outreach should still run (it's a **different** campaign than follow-up — a second outreach with a concrete hook is acceptable if the first was generic and got no reply).
 
 3. **Load HubSpot notes** (optional, for context in the email body).
 
@@ -59,7 +61,7 @@ Use the research approach defined in `knowledge/research-config.md`. The audit c
 
 **Execution:**
 - **MCP:** `WebFetch` on `https://<domain>` with your configured audit prompt (any MCP-capable harness)
-- **CLI:** `node src/tools/webfetch.js audit --url https://<domain> --type <your-type>`
+- **CLI:** `npx tsx src/tools/webfetch.ts audit --url https://<domain> --type <your-type>`
 
 **Error handling:**
 - 404 / connection refused / SSL expired / bounce → SKIP, log as `domain_unavailable`
@@ -151,11 +153,11 @@ YOUR_NAME<br>
 
 ### Step 7 — Create Gmail draft
 - **MCP:** `mcp__claude_ai_Gmail__gmail_create_draft` with `contentType=text/html` ← **IMPORTANT**, different from follow-up-loop
-- **CLI:** `node src/tools/gmail.js draft create --to <email> --subject "..." --body "<html...>" --content-type text/html`
+- **CLI:** `npx tsx src/tools/gmail.ts draft create --to <email> --subject "..." --body "<html...>" --content-type text/html`
 
 ### Step 8 — Tracker update
 ```bash
-node src/tracker.js append "<email>\t<firstname>\t<lastname>\t<company>\t<lead_status>\tRES: <domain> - <top1-finding>\t<draft_id>\tdrafted\t<ISO timestamp>"
+npx tsx src/tracker.ts append "<email>\t<firstname>\t<lastname>\t<company>\t<lead_status>\tRES: <domain> - <top1-finding>\t<draft_id>\tdrafted\t<ISO timestamp>"
 ```
 
 **Marker:** `notes_summary` starts with `RES:` so you can later distinguish whether a lead was drafted via `follow-up-loop` or `research-outreach`.
@@ -182,6 +184,29 @@ Action for human:
 → 19 HTML drafts in Gmail to review and send
 → Reports in output/research-reports/ if needed as attachments
 ```
+
+---
+
+## Append to learnings (end of batch)
+
+After the run report, append one entry to `knowledge/learnings.md` Section B.
+
+**Default — heartbeat:**
+```bash
+npx tsx src/learnings.ts append heartbeat --skill research-outreach \
+  --text "Audited N domains, drafted M, skipped K. Audit type: <type>. Top finding: <most common>"
+```
+
+**Observation (if ≥3 audits surfaced the same finding, a segment showed an unusual audit pattern, or a hook/template worked differently than Section A suggests):**
+```bash
+npx tsx src/learnings.ts append observation --skill research-outreach \
+  --headline "<short pattern name>" \
+  --context "<batch description: audit type, industries, count>" \
+  --observed "<quantitative finding pattern>" \
+  --apply "<concrete rule for next run>"
+```
+
+Write observation **instead of** the heartbeat. See `program.md` for the universal teardown rule.
 
 ---
 

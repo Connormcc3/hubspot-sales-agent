@@ -1,6 +1,6 @@
 # Skill: inbox-classifier
 
-> **Architecture:** One of 4 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 6 skills in the Sales Agent. See `README.md` for the overview.
 > **Shared rules:** `CLAUDE.md` (reply templates follow the same greeting/tone rules).
 > **Related:** Reads lessons from `knowledge/learnings.md`.
 
@@ -29,10 +29,12 @@ Manual. Recommended: 1-2x daily, or after each outreach wave (24-48h later). Inv
 
 ## Setup (once per run)
 
-1. **Read tracker:** `node src/tracker.js read` → set of all `email` addresses we have drafted
+0. **Load learnings** — Read `knowledge/learnings.md`. Section A's "Reply Strategy by Response Type" informs classification + reply drafting, the most recent ~20 entries of Section B flag recent reply patterns, Section C lists distilled rules. Universal requirement — see `program.md`.
+
+1. **Read tracker:** `npx tsx src/tracker.ts read` → set of all `email` addresses we have drafted
 2. **Search inbox:**
    - **MCP:** `mcp__claude_ai_Gmail__gmail_search_messages` with `query="newer_than:7d in:inbox"`
-   - **CLI:** `node src/tools/gmail.js inbox search --query "newer_than:7d in:inbox"`
+   - **CLI:** `npx tsx src/tools/gmail.ts inbox search --query "newer_than:7d in:inbox"`
 3. **Filter replies:** keep threads where:
    - Last message is incoming (not from us)
    - Sender email is in the tracker
@@ -45,12 +47,12 @@ Manual. Recommended: 1-2x daily, or after each outreach wave (24-48h later). Inv
 
 ### Step 1 — Load thread
 - **MCP:** `mcp__claude_ai_Gmail__gmail_read_thread(threadId)` → full thread (need original outreach + all replies)
-- **CLI:** `node src/tools/gmail.js thread read --id <threadId>`
+- **CLI:** `npx tsx src/tools/gmail.ts thread read --id <threadId>`
 
 ### Step 2 — Load HubSpot context
 Find the contact via `fromEmail`:
 - **MCP:** `mcp__claude_ai_HubSpot__search_crm_objects` with `objectType=contacts`, query=email
-- **CLI:** `node src/tools/hubspot.js contacts search --email <email>`
+- **CLI:** `npx tsx src/tools/hubspot.ts contacts search --email <email>`
 
 Read lead status, recent notes, associated deals.
 If no HubSpot contact: mark `awaiting_human` (manual mapping needed).
@@ -135,14 +137,14 @@ Answer the question concretely in 2-4 sentences, then include the scheduling lin
 
 ### Step 5 — HubSpot update
 - **MCP:** `mcp__claude_ai_HubSpot__manage_crm_objects`
-- **CLI:** `node src/tools/hubspot.js contacts update --id <id> --property hs_lead_status --value UNQUALIFIED`
+- **CLI:** `npx tsx src/tools/hubspot.ts contacts update --id <id> --property hs_lead_status --value UNQUALIFIED`
 
 Update lead status (NEGATIVE_* → UNQUALIFIED, POSITIVE_INTENT → IN_PROGRESS).
 Add note with classification + date + first 100 chars of reply.
 
 ### Step 6 — Tracker update
 ```bash
-node src/tracker.js update <email> <reply_classification> [reply_draft_id] [hubspot_status_after]
+npx tsx src/tracker.ts update <email> <reply_classification> [reply_draft_id] [hubspot_status_after]
 ```
 
 Automatically sets `reply_received_at = ISO now`.
@@ -176,14 +178,31 @@ Action for human:
 
 ---
 
-## Lesson Extraction (optional, not every run)
+## Append to learnings (end of run)
 
-When the run shows **surprising patterns** → manually update `knowledge/learnings.md`:
-- Positive signal with unusual email style
-- Sudden cluster of rejections from one industry
-- New rejection reasons not seen before
+After the run report, append exactly one entry to `knowledge/learnings.md` Section B. This is the high-signal writer — reply data is the clearest source of patterns in the whole system.
 
-**Trigger:** 50+ new emails since last wave OR unusual patterns.
+**Default — heartbeat:**
+```bash
+npx tsx src/learnings.ts append heartbeat --skill inbox-classifier \
+  --text "Processed N replies. POS: a / NEG: b / NEU: c / BOUNCE: d / SPAM: e. <optional hint>"
+```
+
+**Observation (write instead of heartbeat when any of these apply):**
+- Cluster of same rejection reason (e.g., 3+ "no budget" replies from the same segment)
+- Positive signal with unusual pattern (e.g., casual tone working unexpectedly for a conservative industry)
+- Sudden bounce pattern from one domain / tld / industry
+- Classification that contradicts an existing Section A or C rule
+
+```bash
+npx tsx src/learnings.ts append observation --skill inbox-classifier \
+  --headline "<short pattern name>" \
+  --context "<batch description, e.g., 'newer_than:7d, 12 replies'>" \
+  --observed "<what was noticed, quantitative>" \
+  --apply "<concrete rule for next run>"
+```
+
+See `program.md` for the universal teardown rule.
 
 ---
 

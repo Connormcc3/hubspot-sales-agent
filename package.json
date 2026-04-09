@@ -1,16 +1,23 @@
 {
   "name": "hubspot-sales-agent",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "type": "module",
   "description": "Autonomous sales agent — bulk outreach, inbox classification, research-driven personalization, lead recovery. HubSpot + Gmail. Runs on any local agent harness.",
   "scripts": {
-    "tracker": "node src/tracker.js",
-    "hubspot": "node src/tools/hubspot.js",
-    "gmail": "node src/tools/gmail.js",
-    "webfetch": "node src/tools/webfetch.js"
+    "tracker": "tsx src/tracker.ts",
+    "learnings": "tsx src/learnings.ts",
+    "hubspot": "tsx src/tools/hubspot.ts",
+    "gmail": "tsx src/tools/gmail.ts",
+    "webfetch": "tsx src/tools/webfetch.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
   },
   "engines": {
     "node": ">=18"

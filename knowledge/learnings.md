@@ -1,44 +1,17 @@
 # Campaign Learnings
 
-> Track what you learn from each outreach wave here.
-> This file is referenced by `skills/inbox-classifier.md` and `skills/research-outreach.md`
-> to help the agent improve over time. Update it manually after each wave.
+> **Living memory for the Sales Agent.** Every skill reads this file at the start of a run and appends an entry at the end via `npx tsx src/learnings.ts append ...`.
+>
+> **Three sections:**
+> - **Section A — Cheat Sheets** (static, human-maintained): greeting rules, reply strategy.
+> - **Section B — Running Log** (append-only, written by skills): chronological observations, newest first. Capped at 100 entries; older entries rotate to `knowledge/learnings-archive.md`.
+> - **Section C — Distilled Patterns** (human-curated): when ≥3 Section B entries converge on the same theme, a human promotes the finding here as a rule.
 
 ---
 
-## Template: Campaign Wave Entry
+## Section A — Cheat Sheets
 
-Copy this structure for each wave you run:
-
-```markdown
-## Wave N — YYYY-MM-DD (X sent, Y opened, Z replies)
-
-**Open rate:** ?% (Y/X)
-**Reply rate:** ?% (Z/X) — W positive, V negative
-**Click rate:** ?% (if tracked)
-
-### Signal 1: [label] — <generic description, no real names>
-
-**Profile:** <role, industry, deal stage>
-**Subject:** "..."
-**Reply summary:** <paraphrase the reply, no real names>
-
-**What worked:**
-- ...
-- ...
-
-**What didn't:**
-- ...
-- ...
-
-**Lesson:** <one-sentence actionable rule you'll follow next time>
-
----
-```
-
----
-
-## Your Greeting Rules (override the default in CLAUDE.md)
+### Greeting Rules (override CLAUDE.md defaults)
 
 Track observations about when casual vs. formal greetings work for your market:
 
@@ -53,36 +26,63 @@ Track observations about when casual vs. formal greetings work for your market:
 
 **Rule of thumb:** Casual only if explicitly documented or obviously appropriate (first-name email, tech industry, young founder). Otherwise formal.
 
----
+### Reply Strategy by Response Type
 
-## Reply Strategy by Response Type
-
-### Positive with intent ("Yes, do you have an offering?")
+#### Positive with intent ("Yes, do you have an offering?")
 1. Reply within 30 minutes
 2. **No invented "details from notes"** — either real notes or none at all
 3. Send scheduling link: `[YOUR_SCHEDULING_LINK]`
 4. One open question to qualify ("What's the main focus for you right now?")
 5. HubSpot: set lead status to `IN_PROGRESS` or `OPEN_DEAL`
 
-### Positive without intent ("Meeting rescheduling")
+#### Positive without intent ("Meeting rescheduling")
 1. Confirm briefly
 2. Send scheduling link if no meeting yet
 3. Tracker: log meeting date for follow-up
 
-### Negative ("No, not right now")
+#### Negative ("No, not right now")
 1. Brief polite acknowledgment (optional)
 2. HubSpot: lead status to `UNQUALIFIED` (not LOST — leave door open)
 3. Tracker: status to `declined`, no more follow-up loop
 4. **Retry in 6+ months** — this time with value-first (research-outreach), not generic mail
 
-### Bounce (not deliverable)
+#### Bounce (not deliverable)
 1. HubSpot: mark email as invalid
 2. Try to find alternative email (LinkedIn, website contact page)
 3. Tracker: mark `email_invalid`
 
 ---
 
-## Open Rate Benchmarks
+## Section B — Running Log
+
+> Skills append entries here at the end of every run via `npx tsx src/learnings.ts append ...`. Newest first. Cap: 100 entries — older entries rotate to `knowledge/learnings-archive.md`.
+>
+> **Entry types:**
+> - `heartbeat` — always written by default. One-line run summary.
+> - `observation` — written instead of a heartbeat when something notable was seen: ≥3 similar signals, an unexpected cluster, or a segment behaving differently from Section A.
+
+<!-- LEARNINGS_LOG_START -->
+
+<!-- LEARNINGS_LOG_END -->
+
+---
+
+## Section C — Distilled Patterns
+
+> When ≥3 Section B entries converge on the same theme, promote the finding here as a pattern. Human-curated only — skills do not write to this section.
+>
+> **Format:**
+> ```
+> ### Pattern: <name>
+> - Evidence: <Section B entry dates>
+> - Apply: <concrete rule>
+> ```
+
+_(No patterns distilled yet. Check Section B periodically and promote recurring signals.)_
+
+---
+
+## Appendix — Open Rate Benchmarks (reference)
 
 Typical benchmarks for reference:
 - Cold outreach standard: 15-25%
@@ -97,7 +97,7 @@ Typical benchmarks for reference:
 
 ---
 
-## Bounce Patterns (track your own)
+## Appendix — Bounce Patterns (manual tracking)
 
 Domains from small businesses often expire. Before sending: DNS check of recipient domains can save 5-10% bounce rate.
 
@@ -106,12 +106,3 @@ Track recurring bounce patterns here:
 | Email | Reason | Date |
 |-------|--------|------|
 | ... | ... | ... |
-
----
-
-## Notes
-
-- Add observations about unusual patterns
-- Track what industries respond well vs. poorly
-- Document subject lines that converted
-- Track what time of day/week works best

@@ -38,14 +38,27 @@ Works with Claude Code, Cursor, Continue, Windsurf, Zed, or any custom harness w
 **Path B — Local CLI tools (universal fallback):**
 Works with any harness that can execute shell commands. Run `npm install`, fill in `.env`, and the agent shells out to:
 ```bash
-node src/tools/hubspot.js <command>    # HubSpot REST API wrapper
-node src/tools/gmail.js <command>      # Gmail API wrapper
-node src/tools/webfetch.js <command>   # HTML fetch + parse
+npx tsx src/tools/hubspot.ts <command>    # HubSpot REST API wrapper
+npx tsx src/tools/gmail.ts <command>      # Gmail API wrapper
+npx tsx src/tools/webfetch.ts <command>   # HTML fetch + parse
 ```
 
 Pick whichever matches your setup. You can also mix both paths (e.g., MCP for HubSpot + CLI for webfetch). See `AGENTS.md` for harness compatibility details.
 
 ## Universal Constraints (apply to all skills)
+
+### Required setup and teardown (every run)
+
+- **Setup — load learnings:** At the start of every skill run, read `knowledge/learnings.md`.
+  - Section A (cheat sheets) informs greeting/tone decisions.
+  - Section B (running log) reflects recent patterns — scan the most recent ~20 entries plus any entries tagged with the current skill.
+  - Section C (distilled patterns) lists human-curated rules to apply if they match the current context.
+
+- **Teardown — append to learnings:** At the end of every skill run, append exactly one entry to `knowledge/learnings.md` Section B via `npx tsx src/learnings.ts append ...`.
+  - Default: `append heartbeat` with a one-line run summary (counts, distribution, any notable hint).
+  - If a genuine pattern was seen (≥3 leads showing the same signal, an unexpected cluster, or a segment behaving differently from Section A): `append observation` **instead of** the heartbeat.
+  - Empty or filler observations are worse than a heartbeat — if nothing surprising happened, write the heartbeat.
+  - `compose-reply` is the one exception: observation-only (no heartbeat), because it runs per-lead and heartbeats would duplicate `table.tsv`.
 
 ### What the agent CAN do
 - Read HubSpot contacts, notes, and deals

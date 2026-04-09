@@ -63,7 +63,7 @@ flowchart TB
 
     subgraph Tools["Tool Paths (pick one)"]
         MCP["MCP Tools\n(Claude Code)"]
-        CLI["Node.js CLI\nsrc/tools/*.js"]
+        CLI["Node.js CLI\nsrc/tools/*.ts"]
     end
 
     subgraph APIs["External APIs"]
@@ -110,17 +110,19 @@ hubspot-sales-agent/
 │   ├── lead-recovery.md          # Decision framework for stale deals
 │   └── compose-reply.md          # Deep-context single-lead composer
 ├── knowledge/                    # Living knowledge base (edit for your business)
-│   ├── learnings.md              # Track what works over time
+│   ├── learnings.md              # Living memory — skills read on every run, append observations/heartbeats at end (Section A cheat sheets, Section B running log, Section C distilled patterns)
+│   ├── learnings-archive.md      # Auto-created when Section B exceeds 100 entries (rotated by src/learnings.ts)
 │   └── research-config.md        # Define your research/audit approach
 ├── prompts/
 │   ├── invoke-skill.md           # All skill invocations + workflows
 │   └── run-followup.md           # Quick-start prompts
 ├── src/
-│   ├── tracker.js                # TSV tracker CLI (read/exists/append/update)
+│   ├── tracker.ts                # TSV tracker CLI (read/exists/append/update)
+│   ├── learnings.ts              # Learnings CLI (append heartbeat/observation to learnings.md Section B)
 │   └── tools/                    # Harness-agnostic CLI wrappers
-│       ├── hubspot.js            # HubSpot REST API
-│       ├── gmail.js              # Gmail API (OAuth)
-│       └── webfetch.js           # HTML fetch + basic audit
+│       ├── hubspot.ts            # HubSpot REST API
+│       ├── gmail.ts              # Gmail API (OAuth)
+│       └── webfetch.ts           # HTML fetch + basic audit
 ├── output/
 │   ├── research-reports/         # Full research reports per lead (markdown)
 │   ├── analysis/                 # Pipeline analysis reports
@@ -143,7 +145,7 @@ This agent is **harness-agnostic**. Every skill file references two interchangea
 Works with **any MCP-capable harness** — Claude Code, Cursor, Continue, Windsurf, Zed, custom harnesses with an MCP client, etc. Install the HubSpot + Gmail MCP servers and you're done (no `.env` needed for the MCP path — auth is handled by the harness).
 
 ### Path B — Local CLI tools (universal fallback)
-Works with **any harness** that can execute shell commands. Run `npm install`, fill in `.env`, and the agent shells out to `node src/tools/*.js`. Use this when:
+Works with **any harness** that can execute shell commands. Run `npm install`, fill in `.env`, and the agent shells out to `npx tsx src/tools/*.ts`. Use this when:
 - Your harness doesn't support MCP yet
 - You want to debug tool calls directly in the terminal
 - You're building a custom Node.js/Python agent loop
@@ -195,10 +197,12 @@ cp .env.example .env
 ### Verify Setup
 
 ```bash
-node src/tools/hubspot.js --help   # should print usage
-node src/tools/gmail.js --help     # should print usage
-node src/tools/webfetch.js --help  # should print usage
-node src/tracker.js read           # should print []
+npx tsx src/tools/hubspot.ts --help   # should print usage
+npx tsx src/tools/gmail.ts --help     # should print usage
+npx tsx src/tools/webfetch.ts --help  # should print usage
+npx tsx src/tracker.ts read           # should print []
+npx tsx src/learnings.ts --help       # should print usage
+npx tsc --noEmit                      # TypeScript type check, should exit 0
 ```
 
 ---
@@ -227,9 +231,17 @@ Pick ONE (or more) audit types that match what you sell:
 
 This is what makes the `research-outreach` skill branche-agnostic.
 
-### 3. (Optional) Start Tracking Learnings (`knowledge/learnings.md`)
+### 3. Learnings memory (`knowledge/learnings.md`)
 
-As you run outreach waves, document what works in this file. The agent reads it on each run to improve over time.
+The agent has a living memory at `knowledge/learnings.md` that every skill reads at the start of a run and appends to at the end. Three sections:
+
+- **Section A — Cheat sheets** (static, you edit): greeting rules, reply strategy.
+- **Section B — Running log** (append-only, skills write via `src/learnings.ts`): chronological observations, newest first. Capped at 100 entries; older entries rotate to `knowledge/learnings-archive.md`.
+- **Section C — Distilled patterns** (human-curated): when ≥3 Section B entries converge on a theme, you promote the finding here as a rule.
+
+Every skill run ends with exactly one automated entry — usually a `heartbeat` (one-line run summary) or, if a genuine pattern was seen, an `observation` (quantified finding + rule for next time). `compose-reply` is the one exception — it writes observations only, never heartbeats.
+
+You don't need to do anything to enable this — it's part of the universal skill contract in `program.md`. You only maintain Section A (your cheat sheets) and periodically promote Section B entries to Section C patterns.
 
 ---
 
@@ -332,9 +344,14 @@ See [`prompts/invoke-skill.md`](prompts/invoke-skill.md) for all invocations, mo
 
 ---
 
-## Tracking System
+## State files
 
-Every action is logged to `table.tsv` (13 columns):
+The agent has two state files — both living in the repo, both are single sources of truth for their concern:
+
+1. **`table.tsv`** — per-contact tracker (13 columns). Every draft, skip, error, reply classification lives here. Used by every skill for deduplication and reply tracking. Written via `src/tracker.ts`.
+2. **`knowledge/learnings.md`** — living memory (3 sections). Cheat sheets, running log, distilled patterns. Read by every skill at start, written via `src/learnings.ts` at end. See the "Learnings memory" section above.
+
+### table.tsv columns (13 total)
 
 | Column | Description | Written By |
 |--------|-------------|-----------|
@@ -352,11 +369,20 @@ Every action is logged to `table.tsv` (13 columns):
 
 **Tracker CLI:**
 ```bash
-node src/tracker.js read                                           # JSON array of all emails
-node src/tracker.js exists <email>                                 # "true" or "false"
-node src/tracker.js append "<tab-separated-row>"                   # add a new row
-node src/tracker.js update <email> <classification> [draft_id]    # set reply fields
+npx tsx src/tracker.ts read                                           # JSON array of all emails
+npx tsx src/tracker.ts exists <email>                                 # "true" or "false"
+npx tsx src/tracker.ts append "<tab-separated-row>"                   # add a new row
+npx tsx src/tracker.ts update <email> <classification> [draft_id]    # set reply fields
 ```
+
+**Learnings CLI** (written by skills at end-of-run, see `program.md` universal teardown rule):
+```bash
+npx tsx src/learnings.ts append heartbeat --skill <skill> --text "<one-line summary>"
+npx tsx src/learnings.ts append observation --skill <skill> \
+  --headline "..." --context "..." --observed "..." --apply "..."
+```
+
+Entries land in `knowledge/learnings.md` Section B (newest first). When Section B exceeds 100 entries, the oldest rotate to `knowledge/learnings-archive.md` automatically.
 
 ---
 
@@ -421,8 +447,8 @@ Human reviews reply drafts (5 min) and sends
 4. Document in `README.md`
 
 ### Add a New Tool
-1. Create `src/tools/your-tool.js` (ES modules, JSON stdout)
-2. Follow the pattern in `hubspot.js` / `gmail.js` (args, auth via `.env`, error handling)
+1. Create `src/tools/your-tool.ts` (ES modules, JSON stdout)
+2. Follow the pattern in `hubspot.ts` / `gmail.ts` (args, auth via `.env`, error handling)
 3. Reference it in the skills that need it
 
 ### Support a New Harness
@@ -434,7 +460,7 @@ See [AGENTS.md](AGENTS.md) for the integration pattern.
 
 - **Gmail rate limits** — the Gmail API enforces quota limits; large batches may be throttled
 - **Notes extraction** — depends on consistent note formatting in your HubSpot CRM
-- **Basic webfetch audit** — the built-in `webfetch.js` audit covers basic SEO signals. For richer audits (Lighthouse, full-page render, etc.), extend the tool or integrate an external service
+- **Basic webfetch audit** — the built-in `webfetch.ts` audit covers basic SEO signals. For richer audits (Lighthouse, full-page render, etc.), extend the tool or integrate an external service
 - **OAuth setup** — Gmail OAuth requires a one-time refresh token generation, which can feel clunky. See README for walkthrough
 - **No email sending** — by design (drafts only)
 

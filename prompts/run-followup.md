@@ -18,7 +18,7 @@ For each contact:
   3. Extract context from notes (status, project, budget)
   4. Generate personalized follow-up email
   5. Create Gmail draft
-  6. Log to table.tsv immediately (node src/tracker.js append ...)
+  6. Log to table.tsv immediately (npx tsx src/tracker.ts append ...)
   7. Continue — do NOT ask for confirmation
 
 When interrupted: print summary.

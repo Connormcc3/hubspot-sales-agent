@@ -31,9 +31,9 @@ The agent can run on two interchangeable paths — pick whichever your harness s
 - Gmail: `mcp__claude_ai_Gmail__gmail_create_draft`, `mcp__claude_ai_Gmail__gmail_search_messages`, `mcp__claude_ai_Gmail__gmail_read_thread`
 
 **Path B — Local CLI tools (universal fallback for any harness):**
-- HubSpot: `node src/tools/hubspot.js <command>`
-- Gmail: `node src/tools/gmail.js <command>`
-- WebFetch: `node src/tools/webfetch.js <command>`
+- HubSpot: `npx tsx src/tools/hubspot.ts <command>`
+- Gmail: `npx tsx src/tools/gmail.ts <command>`
+- WebFetch: `npx tsx src/tools/webfetch.ts <command>`
 
 You can mix both paths. See `AGENTS.md` for harness compatibility details.
 
@@ -169,12 +169,12 @@ YOUR_DOMAIN
 
 After every created draft, log to `table.tsv` immediately:
 ```bash
-node src/tracker.js append "email@example.com\tFirstName\tLastName\tCompany\tCONNECTED\tShort notes summary\tdraftId\tdrafted\t2026-04-08T10:00:00Z"
+npx tsx src/tracker.ts append "email@example.com\tFirstName\tLastName\tCompany\tCONNECTED\tShort notes summary\tdraftId\tdrafted\t2026-04-08T10:00:00Z"
 ```
 
 Before every draft, check:
 ```bash
-node src/tracker.js exists "email@example.com"
+npx tsx src/tracker.ts exists "email@example.com"
 # → "true" = skip, "false" = process
 ```
 

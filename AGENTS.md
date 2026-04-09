@@ -9,7 +9,7 @@ This Sales Agent is **harness-agnostic**. The same skill files can run on any lo
 Every skill file (`skills/*.md`) references **two interchangeable tool paths**:
 
 - **Path A — MCP tools:** `mcp__claude_ai_HubSpot__*`, `mcp__claude_ai_Gmail__*`
-- **Path B — Local CLI tools:** `node src/tools/hubspot.js`, `node src/tools/gmail.js`, `node src/tools/webfetch.js`
+- **Path B — Local CLI tools:** `npx tsx src/tools/hubspot.ts`, `npx tsx src/tools/gmail.ts`, `npx tsx src/tools/webfetch.ts`
 
 Both paths return JSON. The agent's logic (classify, extract, draft, log) is identical regardless of which path you use.
 
@@ -43,13 +43,13 @@ For any harness without MCP support, or when you prefer a simpler setup:
 **Setup:**
 1. `npm install`
 2. `cp .env.example .env` and fill in credentials (HubSpot + Google OAuth)
-3. Verify: `node src/tools/hubspot.js --help`
+3. Verify: `npx tsx src/tools/hubspot.ts --help`
 
-**The agent's loop shells out to `node src/tools/*.js` commands and parses JSON from stdout.**
+**The agent's loop shells out to `npx tsx src/tools/*.ts` commands and parses JSON from stdout.**
 
 **When CLI is the right choice:**
 - Your harness doesn't support MCP yet
-- You want to debug tool calls directly in your terminal (`node src/tools/hubspot.js contacts list --limit 5`)
+- You want to debug tool calls directly in your terminal (`npx tsx src/tools/hubspot.ts contacts list --limit 5`)
 - You prefer a minimal dependency footprint
 - You're building a custom Node.js or Python agent loop
 
@@ -67,14 +67,14 @@ Pseudocode for running `follow-up-loop` on any harness without MCP:
 
 ```
 1. Read skills/follow-up-loop.md + CLAUDE.md + knowledge/*.md
-2. Execute: node src/tracker.js read → skip set
-3. Execute: node src/tools/hubspot.js contacts list --limit 100
+2. Execute: npx tsx src/tracker.ts read → skip set
+3. Execute: npx tsx src/tools/hubspot.ts contacts list --limit 100
 4. For each contact not in skip set:
-   a. Execute: node src/tools/hubspot.js notes list --contact-id <id>
+   a. Execute: npx tsx src/tools/hubspot.ts notes list --contact-id <id>
    b. Check skip flags in notes
    c. Generate email (LLM call using CLAUDE.md rules)
-   d. Execute: node src/tools/gmail.js draft create --to X --subject Y --body Z
-   e. Execute: node src/tracker.js append "..."
+   d. Execute: npx tsx src/tools/gmail.ts draft create --to X --subject Y --body Z
+   e. Execute: npx tsx src/tracker.ts append "..."
 5. Continue until contacts exhausted or interrupted
 ```
 
@@ -102,7 +102,7 @@ If your harness needs different tool plumbing or conventions:
 
 **CLI is great as a fallback:**
 - Works on harnesses without MCP clients
-- Debuggable directly in your terminal (`node src/tools/hubspot.js contacts list`)
+- Debuggable directly in your terminal (`npx tsx src/tools/hubspot.ts contacts list`)
 - Language-agnostic — any harness that can exec shell commands can use it
 - Same logic works in Node.js, Python, Bash, or any orchestration tool
 

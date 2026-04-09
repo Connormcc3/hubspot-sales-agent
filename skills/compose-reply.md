@@ -49,10 +49,14 @@ The invocation always includes:
 
 ## Per-Lead 6-Step Loop
 
+### Step 0 — Load learnings (once per run)
+
+Read `knowledge/learnings.md`. Section A informs greeting/tone, Section B (recent entries) flags patterns observed across other skills that might apply to this lead, Section C lists distilled rules. Universal requirement — see `program.md`.
+
 ### Step 1 — Identify the lead
 Resolve the input to a HubSpot contact:
 - **MCP:** `mcp__claude_ai_HubSpot__search_crm_objects` with `objectType=contacts`, query by email
-- **CLI:** `node src/tools/hubspot.js contacts search --email <email>`
+- **CLI:** `npx tsx src/tools/hubspot.ts contacts search --email <email>`
 
 If not found in HubSpot: continue with email history only, flag as "no HubSpot record".
 
@@ -62,7 +66,7 @@ Fetch **everything** available about this lead. Unlike `follow-up-loop` which re
 
 **2a. HubSpot notes (ALL notes, not last 5):**
 - **MCP:** `mcp__claude_ai_HubSpot__search_crm_objects` — `objectType=notes`, filter by contact ID, sort by timestamp ASC for chronological order
-- **CLI:** `node src/tools/hubspot.js notes list --contact-id <id> --limit 200`
+- **CLI:** `npx tsx src/tools/hubspot.ts notes list --contact-id <id> --limit 200`
 
 **2b. HubSpot deals linked to this contact:**
 - Read all deals with their stage, amount, create date, last activity, and any associated notes
@@ -70,10 +74,10 @@ Fetch **everything** available about this lead. Unlike `follow-up-loop` which re
 
 **2c. Email history (both directions):**
 - **MCP:** `mcp__claude_ai_Gmail__gmail_search_messages` — query: `from:<email> OR to:<email>`
-- **CLI:** `node src/tools/gmail.js inbox search --query "from:<email> OR to:<email>"`
+- **CLI:** `npx tsx src/tools/gmail.ts inbox search --query "from:<email> OR to:<email>"`
 - For each thread, read the full bodies (not just snippets):
   - **MCP:** `mcp__claude_ai_Gmail__gmail_read_thread`
-  - **CLI:** `node src/tools/gmail.js thread read --id <threadId>`
+  - **CLI:** `npx tsx src/tools/gmail.ts thread read --id <threadId>`
 
 **2d. Prior agent interactions:**
 - Check `table.tsv` for any rows matching this email
@@ -146,8 +150,8 @@ Print to console:
 
 **If user confirms:**
 - **MCP:** `mcp__claude_ai_Gmail__gmail_create_draft` with `contentType=text/plain` (or `text/html` if body is HTML)
-- **CLI:** `node src/tools/gmail.js draft create --to <email> --subject "..." --body "..."`
-- Append to tracker: `node src/tracker.js append "<email>\t<firstname>\t<lastname>\t<company>\t<lead_status>\tCOMPOSE: <1-sentence summary of angle used>\t<draft_id>\tdrafted\t<ISO timestamp>"`
+- **CLI:** `npx tsx src/tools/gmail.ts draft create --to <email> --subject "..." --body "..."`
+- Append to tracker: `npx tsx src/tracker.ts append "<email>\t<firstname>\t<lastname>\t<company>\t<lead_status>\tCOMPOSE: <1-sentence summary of angle used>\t<draft_id>\tdrafted\t<ISO timestamp>"`
 
 **Optional dossier save:**
 If the invocation includes `--save-dossier`, write the full brief + draft to `output/lead-dossiers/<email>.md` for future reference. This is useful for VIP leads you'll revisit.
@@ -175,6 +179,27 @@ Tone: casual (we had documented Du-contact in notes).
 Assemble the full context from HubSpot + Gmail history + tracker,
 generate a brief, then draft the email. Ask me before creating the Gmail draft.
 ```
+
+---
+
+## Append to learnings (observation-only, if surprising)
+
+`compose-reply` is the one skill that does **not** write a heartbeat. It runs per-lead, frequently, and `table.tsv` already records each invocation — heartbeats here would be noise.
+
+**Only append if the lead was genuinely surprising:**
+- A new pattern not in existing learnings (Section B or C)
+- Context that contradicted an assumption baked into Section A
+- A hook/angle that worked (or clearly won't work) and is reusable across leads
+
+```bash
+npx tsx src/learnings.ts append observation --skill compose-reply \
+  --headline "<short pattern name>" \
+  --context "<lead profile, anonymized: role, industry, deal stage>" \
+  --observed "<what was surprising about this lead>" \
+  --apply "<concrete rule for similar leads next time>"
+```
+
+Otherwise: skip. No heartbeat. See `program.md` for the universal teardown rule (this skill is the documented exception).
 
 ---
 

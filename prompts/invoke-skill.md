@@ -1,6 +1,6 @@
 # Sales Agent — Skill Invocation
 
-> Overview of all 4 skills + how to invoke them. Each block is self-contained — copy-paste into your agent harness.
+> Overview of all 6 skills + how to invoke them. Each block is self-contained — copy-paste into your agent harness.
 >
 > **Before every invocation:** You should have `README.md` and `CLAUDE.md` loaded (or the agent reads them at the start of each skill run).
 
@@ -80,7 +80,7 @@ For each new reply:
 3. Classify (8 categories)
 4. For POSITIVE_*: create reply draft
 5. Update HubSpot status (NEGATIVE_* → UNQUALIFIED)
-6. Update tracker via node src/tracker.js update <email> <classification> [draft_id]
+6. Update tracker via npx tsx src/tracker.ts update <email> <classification> [draft_id]
 
 At the end: run report with counts per category + action list for human.
 ```

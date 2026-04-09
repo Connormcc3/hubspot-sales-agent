@@ -1,6 +1,6 @@
 # Skill: pipeline-analysis
 
-> **Architecture:** One of 5 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 6 skills in the Sales Agent. See `README.md` for the overview.
 > **Related skills:** This skill is the "zoom out" — it analyzes the whole HubSpot pipeline and recommends which action-skills to run next (`follow-up-loop`, `research-outreach`, `lead-recovery`).
 
 ---
@@ -26,14 +26,16 @@ One-shot run. No loop, no background work. When the analysis is complete, print 
 
 ## Setup
 
-1. **Read tracker:** `node src/tracker.js read` → set of emails already processed by the agent
+0. **Load learnings** — Read `knowledge/learnings.md`. The most recent ~20 entries of Section B act as a trend baseline (prior pipeline snapshots let you detect deltas), Section A/C inform which segments/industries to flag. Universal requirement — see `program.md`.
+
+1. **Read tracker:** `npx tsx src/tracker.ts read` → set of emails already processed by the agent
 2. **Fetch all contacts** from HubSpot:
    - **MCP:** `mcp__claude_ai_HubSpot__search_crm_objects` with `objectType=contacts`, paginate through all
-   - **CLI:** `node src/tools/hubspot.js contacts list --limit 100 --offset <N>` in a loop
+   - **CLI:** `npx tsx src/tools/hubspot.ts contacts list --limit 100 --offset <N>` in a loop
    - Properties: `firstname`, `lastname`, `email`, `company`, `jobtitle`, `hs_lead_status`, `industry`, `lifecyclestage`, `createdate`, `lastmodifieddate`
 3. **Fetch all deals**:
    - **MCP:** `mcp__claude_ai_HubSpot__search_crm_objects` with `objectType=deals`
-   - **CLI:** `node src/tools/hubspot.js deals list --limit 100 --offset <N>` in a loop
+   - **CLI:** `npx tsx src/tools/hubspot.ts deals list --limit 100 --offset <N>` in a loop
    - Properties: `dealname`, `amount`, `dealstage`, `closedate`, `hs_lastmodifieddate`, `createdate`
 
 ---
@@ -128,6 +130,29 @@ Write the full analysis to `output/analysis/pipeline-<YYYY-MM-DD>.md`:
 ## Data Quality Flags
 [List of issues found]
 ```
+
+---
+
+## Append to learnings (end of analysis)
+
+After writing the report, append one entry to `knowledge/learnings.md` Section B. pipeline-analysis is the trend-tracker — its heartbeats form a week-over-week snapshot chain.
+
+**Default — heartbeat (always write the snapshot):**
+```bash
+npx tsx src/learnings.ts append heartbeat --skill pipeline-analysis \
+  --text "Contacts N, deals M, win rate X%. Stale Y, zombie Z. Top untouched segment: <segment>."
+```
+
+**Observation (if the pipeline moved significantly vs the prior snapshot, a segment suddenly grew/shrunk, or the recommended-action list shifted):**
+```bash
+npx tsx src/learnings.ts append observation --skill pipeline-analysis \
+  --headline "<short delta name>" \
+  --context "<comparison to prior snapshot>" \
+  --observed "<quantitative delta>" \
+  --apply "<concrete action>"
+```
+
+Write observation **instead of** the heartbeat when a real delta is present — otherwise the heartbeat snapshot is the valuable output. See `program.md` for the universal teardown rule.
 
 ---
 

@@ -1,6 +1,6 @@
 # Skill: lead-recovery
 
-> **Architecture:** One of 4 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 6 skills in the Sales Agent. See `README.md` for the overview.
 > **Related skill:** `research-outreach.md` handles the actual value-first outreach — this skill only provides the decision framework + lead selection.
 
 ---
@@ -42,6 +42,10 @@ This framework is for deals where `follow-up-loop` no longer works:
 ---
 
 ## Per-Deal Decision Loop
+
+### Step 0 — Load learnings (once per run)
+
+Read `knowledge/learnings.md`. Section A informs recovery-lever reasoning (don't re-engage with a tone that failed before), the most recent ~20 entries of Section B flag recovery patterns from prior runs (what levers worked for which deal profiles), Section C lists distilled rules. Universal requirement — see `program.md`.
 
 ### Step 1 — Load deal data
 Via HubSpot (MCP or CLI):
@@ -132,6 +136,29 @@ Action for human:
 → 5 deals to set LOST in HubSpot
 → 2 deals for internal discussion
 ```
+
+---
+
+## Append to learnings (end of analysis)
+
+After the run report, append one entry to `knowledge/learnings.md` Section B.
+
+**Default — heartbeat:**
+```bash
+npx tsx src/learnings.ts append heartbeat --skill lead-recovery \
+  --text "Analyzed N deals. HIGH a / MED-HIGH b / MED c / LOW d / UNCLEAR e. K deals flagged for close."
+```
+
+**Observation (if a recovery-lever pattern emerged, a segment dominated one chance bucket, or pipeline hygiene revealed a systemic issue):**
+```bash
+npx tsx src/learnings.ts append observation --skill lead-recovery \
+  --headline "<short pattern name>" \
+  --context "<batch description: deal count, source>" \
+  --observed "<quantitative pattern in chance or lever>" \
+  --apply "<concrete rule for next run>"
+```
+
+Write observation **instead of** the heartbeat. See `program.md` for the universal teardown rule.
 
 ---
 
