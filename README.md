@@ -252,12 +252,24 @@ Classify all new replies, create reply drafts for positive ones, update HubSpot 
 
 ### Research-driven outreach for a curated list
 
+Researches each lead's website/business using the audit type you configured in `knowledge/research-config.md` (SEO, UX, brand, tech, content, competitive, or custom), then embeds the top-3 findings as an HTML table in a personalized email draft.
+
 ```
-Read skills/research-outreach.md and knowledge/research-config.md.
+Read skills/research-outreach.md, knowledge/research-config.md, and CLAUDE.md.
 Run for these leads:
 - john@example.com, John Smith, Acme Inc, acme.com, ATTEMPTED_TO_CONTACT
 - jane@another.com, Jane Doe, Beta Corp, beta.com, NEW
+- founder@startup.io, Alex Kim, Startup Inc, startup.io, CONNECTED
+
+For each lead:
+1. Audit the domain using the research type from research-config.md
+2. Save full report to output/research-reports/<domain-slug>.md
+3. Build HTML email with top-3 findings as a table
+4. Create Gmail draft (contentType=text/html)
+5. Log to table.tsv with notes_summary prefix "RES:"
 ```
+
+The agent will produce: full markdown reports in `output/research-reports/`, ready-to-send HTML drafts in Gmail, and tracker rows marked with an `RES:` prefix so you can distinguish research-driven drafts from bulk follow-ups.
 
 ### Analyze stale deals
 
