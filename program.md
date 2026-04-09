@@ -22,6 +22,7 @@ Automate the outbound sales flow:
 | **inbox-classifier** | `skills/inbox-classifier.md` | Classify replies + auto-draft responses |
 | **research-outreach** | `skills/research-outreach.md` | Research-driven personalized outreach (configurable audit type) |
 | **lead-recovery** | `skills/lead-recovery.md` | Decision framework for stale deals |
+| **compose-reply** | `skills/compose-reply.md` | Deep-context single-lead composer with full history + custom context |
 
 See `prompts/invoke-skill.md` for how to invoke each skill.
 
@@ -77,5 +78,6 @@ Each skill defines its own stopping rules:
 - **inbox-classifier:** ONE-SHOT — process all new replies, then STOP
 - **research-outreach:** Process the given lead list, then STOP
 - **lead-recovery:** Analyze the given deals, then STOP (no outreach, just recommendations)
+- **compose-reply:** ONE-SHOT — process one lead, output brief + draft, then STOP
 
 Refer to each skill file for the exact behavior.

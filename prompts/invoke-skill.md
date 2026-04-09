@@ -256,6 +256,67 @@ Show me:
 
 ---
 
+## Skill 6: compose-reply
+
+### Full Deep-Context Reply
+
+```
+Read skills/compose-reply.md and CLAUDE.md.
+Compose a reply to this lead:
+
+Email: <email@example.com>
+
+New context:
+- <any fresh information you want to inject>
+- <e.g., "They just raised Series A yesterday">
+- <e.g., "Competitor just lost them">
+
+Desired outcome:
+- <what should the email achieve — meeting booked, reply, soft re-engagement, etc.>
+
+Tone: <casual / formal / match the prior conversation>
+
+Assemble full context from HubSpot + Gmail history + tracker.
+Generate a structured brief, then draft the email.
+SHOW me the brief and draft first. Ask before creating the Gmail draft.
+```
+
+### Brief Only (no draft, just context assembly)
+
+```
+Read skills/compose-reply.md.
+Assemble a full context brief for this lead — no draft:
+
+Email: <email@example.com>
+
+Pull:
+- All HubSpot notes chronologically
+- All linked deals with stage and history
+- Complete Gmail thread history (both directions)
+- Prior agent interactions from table.tsv
+
+Output: structured brief with who they are, relationship history,
+last activity, current state, and recommended angle for my next move.
+Do NOT draft an email. I'll write it myself.
+```
+
+### Save Lead Dossier
+
+```
+Read skills/compose-reply.md and CLAUDE.md.
+Compose a reply to this lead and save the dossier for future reference:
+
+Email: <email@example.com>
+New context: <...>
+Desired outcome: <...>
+
+Assemble full context, generate brief, draft the email,
+and save the dossier to output/lead-dossiers/<email>.md.
+Ask me before creating the Gmail draft.
+```
+
+---
+
 ## Workflow Examples
 
 ### Workflow A: Send wave + follow up

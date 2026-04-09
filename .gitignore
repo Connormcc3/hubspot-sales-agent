@@ -13,11 +13,13 @@ output/already_drafted.json
 output/research-reports/*.md
 output/recovery-*.md
 output/analysis/*.md
+output/lead-dossiers/*.md
 
 # Keep directory structure
 !output/.gitkeep
 !output/research-reports/.gitkeep
 !output/analysis/.gitkeep
+!output/lead-dossiers/.gitkeep
 
 # Editor
 .DS_Store

@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.0] - 2026-04-09
+
+### Added
+- **`compose-reply` skill** — deep-context single-lead composer. Assembles full email history (both directions), all HubSpot notes and deals, prior agent interactions, plus custom new context you inject, then generates a structured brief and draft. Use this when bulk skills don't provide enough personalization for a high-value lead.
+- 3 invocation modes: full compose, brief-only, save-dossier
+- New `output/lead-dossiers/` directory for saved briefs (gitignored by default)
+
+### Changed
+- Skill count: 5 → 6
+- README, program.md, Mermaid diagram updated
+
 ## [2.1.0] - 2026-04-09
 
 ### Added

@@ -24,7 +24,7 @@ The agent is **branche-agnostic** (works for any industry) and **harness-agnosti
 
 ---
 
-## Five Composable Skills
+## Six Composable Skills
 
 | Skill | What It Does |
 |-------|-------------|
@@ -33,6 +33,7 @@ The agent is **branche-agnostic** (works for any industry) and **harness-agnosti
 | **inbox-classifier** | Reads incoming replies, classifies them into 8 categories, drafts responses to positive replies, and syncs HubSpot status |
 | **research-outreach** | Researches a lead's website/business using a configurable audit type, embeds top findings in a personalized email |
 | **lead-recovery** | Decision framework for stale/burned-out deals — recommends recovery levers or pipeline cleanup |
+| **compose-reply** | Deep-context single-lead composer — assembles full email history + HubSpot data + custom new context and drafts a careful reply for one specific lead |
 
 Each skill is self-contained. Invoke them independently or combine them in workflows. **Start with `pipeline-analysis`** to understand your workspace and decide where to focus.
 
@@ -51,12 +52,13 @@ flowchart TB
         Knowledge["knowledge/\n(learnings + research config)"]
     end
 
-    subgraph Skills["5 Skills"]
+    subgraph Skills["6 Skills"]
         Skill0["skills/pipeline-analysis.md"]
         Skill1["skills/follow-up-loop.md"]
         Skill2["skills/inbox-classifier.md"]
         Skill3["skills/research-outreach.md"]
         Skill4["skills/lead-recovery.md"]
+        Skill5["skills/compose-reply.md"]
     end
 
     subgraph Tools["Tool Paths (pick one)"]
@@ -100,12 +102,13 @@ hubspot-sales-agent/
 ├── program.md                    # Shared constraints, setup, error handling
 ├── CLAUDE.md                     # Shared email generation rules (greeting, tone, templates)
 ├── AGENTS.md                     # Harness compatibility guide
-├── skills/                       # 5 composable skills
+├── skills/                       # 6 composable skills
 │   ├── pipeline-analysis.md      # Full pipeline health check + recommendations
 │   ├── follow-up-loop.md         # Bulk outreach autonomous loop
 │   ├── inbox-classifier.md       # 8-category reply classification + auto-drafts
 │   ├── research-outreach.md      # Research-driven personalized outreach
-│   └── lead-recovery.md          # Decision framework for stale deals
+│   ├── lead-recovery.md          # Decision framework for stale deals
+│   └── compose-reply.md          # Deep-context single-lead composer
 ├── knowledge/                    # Living knowledge base (edit for your business)
 │   ├── learnings.md              # Track what works over time
 │   └── research-config.md        # Define your research/audit approach
@@ -121,6 +124,7 @@ hubspot-sales-agent/
 ├── output/
 │   ├── research-reports/         # Full research reports per lead (markdown)
 │   ├── analysis/                 # Pipeline analysis reports
+│   ├── lead-dossiers/            # Deep-context briefs from compose-reply
 │   ├── errors.log                # Runtime error log
 │   └── recovery-*.md             # Lead recovery analysis outputs
 ├── table.tsv                     # Single source of truth (13 columns, gitignored)
@@ -300,6 +304,29 @@ Read skills/lead-recovery.md.
 Analyze HubSpot deals older than 6 months with no activity.
 Recommend recovery lever per deal.
 ```
+
+### Deep-context reply to a single high-value lead
+
+For when bulk skills aren't enough — assembles full email history + HubSpot data + your custom new context to craft one careful reply.
+
+```
+Read skills/compose-reply.md and CLAUDE.md.
+Compose a reply to this lead:
+
+Email: founder@acme.com
+
+New context:
+- They just posted on LinkedIn about expanding to 3 new markets this quarter
+- Their website still uses the old pricing page we discussed improving last year
+
+Desired outcome:
+- Warmly re-engage, use the LinkedIn post as a hook, offer a short call.
+
+Assemble full context from HubSpot + Gmail history + tracker,
+generate a brief, then draft the email. Ask me before creating the Gmail draft.
+```
+
+The agent will produce: a structured brief (who they are, relationship history, recommended angle), a draft reply, and — only after you confirm — a Gmail draft + tracker entry.
 
 See [`prompts/invoke-skill.md`](prompts/invoke-skill.md) for all invocations, modes, and workflow examples.
 
