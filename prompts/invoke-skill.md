@@ -1,6 +1,6 @@
 # Sales Agent — Skill Invocation
 
-> Overview of all 7 skills + how to invoke them. Each block is self-contained — copy-paste into your agent harness.
+> Overview of all 9 skills + how to invoke them. Each block is self-contained — copy-paste into your agent harness.
 >
 > **Before every invocation:** You should have `README.md` and `CLAUDE.md` loaded (or the agent reads them at the start of each skill run).
 
@@ -406,4 +406,144 @@ Ask me before creating the Gmail draft.
 4. Run the recommended skills (follow-up-loop / research-outreach / lead-recovery)
 5. Human reviews drafts and sends
 6. Run inbox-classifier daily through the week
+```
+
+---
+
+## Skill 8: prospect-research
+
+### Standard (with lead list)
+
+```
+Read skills/prospect-research.md and CLAUDE.md.
+Research these companies and create dossiers:
+
+- john@acme.com, John Smith, Acme Inc, acme.com
+- jane@beta.io, Jane Doe, Beta Corp, beta.io
+- mike@gamma.de, Mike Müller, Gamma GmbH, gamma.de
+
+For each lead:
+1. Fetch company website (homepage, about, careers, blog, services)
+2. Build company profile (what they do, size, industry, tech stack)
+3. Surface recent signals (hiring, news, product changes)
+4. Generate 3-5 pain-point hypotheses with confidence levels
+5. Score the lead via src/scoring.ts
+6. Save dossier to output/prospect-dossiers/<company-slug>.md
+
+At the end: run report with dossier count, tier distribution, top pain points.
+```
+
+### Single Company
+
+```
+Read skills/prospect-research.md and CLAUDE.md.
+Research this one company in depth:
+
+Email: john@acme.com
+Company: Acme Inc
+Domain: acme.com
+
+Create a full dossier at output/prospect-dossiers/acme-inc.md.
+Show me the dossier when done. Do not draft any emails.
+```
+
+### From lead-recovery output
+
+```
+Read skills/prospect-research.md and CLAUDE.md.
+The lead-recovery run recommended "value-first" for these deals:
+
+[Paste the lead-recovery "value-first" list here]
+
+Research each company, create dossiers, then hand off to cold-outreach.
+```
+
+---
+
+## Skill 9: cold-outreach
+
+### With Dossiers (best results)
+
+```
+Read skills/cold-outreach.md and CLAUDE.md.
+Run cold outreach for these leads (dossiers already exist in output/prospect-dossiers/):
+
+- john@acme.com, John Smith, Acme Inc
+- jane@beta.io, Jane Doe, Beta Corp
+
+For each lead:
+1. Load dossier from output/prospect-dossiers/
+2. Choose template (signal-based or value-first based on hypothesis confidence)
+3. Draft a first-touch cold email
+4. Create Gmail draft
+5. Log to tracker with COLD: prefix
+
+Skip D-tier leads. Sort by priority tier (A first).
+At the end: run report with draft count, template distribution, tier breakdown.
+```
+
+### Without Dossiers (quick blast)
+
+```
+Read skills/cold-outreach.md and CLAUDE.md.
+Cold-email these leads (no dossiers, use HubSpot data only):
+
+- john@acme.com, John Smith, Acme Inc, CEO
+- jane@beta.io, Jane Doe, Beta Corp, Marketing Director
+
+Use Template 3 (lightweight). Keep emails to 3 sentences max.
+Create Gmail drafts and log to tracker.
+```
+
+### Full Pipeline (research + cold)
+
+```
+Read skills/prospect-research.md, skills/cold-outreach.md, and CLAUDE.md.
+
+Step 1: Research these leads and create dossiers:
+- john@acme.com, John Smith, Acme Inc, acme.com
+- jane@beta.io, Jane Doe, Beta Corp, beta.io
+
+Step 2: Use the dossiers to draft first-touch cold emails.
+Sort by priority tier. Skip D-tier.
+
+At the end: combined run report.
+```
+
+### Preview Mode (no drafts)
+
+```
+Read skills/cold-outreach.md and CLAUDE.md.
+PREVIEW MODE — show me the cold emails but do NOT create Gmail drafts
+and do NOT update the tracker.
+
+Leads:
+- john@acme.com, John Smith, Acme Inc
+
+Show: subject, body, template used, priority tier, reasoning.
+```
+
+---
+
+## Workflow Examples (updated)
+
+### Workflow E: Cold outreach pipeline
+
+```
+1. Build lead list (manual curation, LinkedIn export, purchased list)
+2. Run prospect-research → dossiers with pain-point hypotheses
+3. Run cold-outreach → signal-based cold emails using dossiers
+4. Human reviews drafts and sends
+5. (Day 2-3) Run inbox-classifier
+6. Positive replies → compose-reply for deep follow-up
+```
+
+### Workflow F: Scored pipeline prioritization
+
+```
+1. Score all contacts: npx tsx src/scoring.ts score-tracker
+2. Run pipeline-analysis (now includes score distribution)
+3. A-tier leads without outreach → prospect-research + cold-outreach
+4. B-tier leads → follow-up-loop or research-outreach
+5. D-tier leads → lead-recovery to decide if worth keeping
 ```

@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">HubSpot Sales Agent</h1>
   <p align="center">
-    Your autonomous sales team — bulk outreach, inbox classification, research-driven personalization, and lead recovery.<br>
+    Your autonomous sales team — lead scoring, cold outreach, research-driven personalization, inbox classification, and pipeline recovery.<br>
     Runs on any local agent harness.
   </p>
 </p>
@@ -60,7 +60,7 @@ The agent prints drafts to the console. Nothing was sent. Nothing was stored. Th
 
 ---
 
-## Seven Composable Skills
+## Nine Composable Skills
 
 | Skill | What It Does |
 |-------|-------------|
@@ -71,8 +71,19 @@ The agent prints drafts to the console. Nothing was sent. Nothing was stored. Th
 | **research-outreach** | Researches a lead's website/business using a configurable audit type, embeds top findings in a personalized email |
 | **lead-recovery** | Decision framework for stale/burned-out deals — recommends recovery levers or pipeline cleanup |
 | **compose-reply** | Deep-context single-lead composer — assembles full email history + HubSpot data + custom new context and drafts a careful reply for one specific lead |
+| **prospect-research** | Deep intelligence gathering — company profile, recent signals, decision-maker mapping, pain-point hypotheses. Outputs structured dossiers that `cold-outreach` consumes |
+| **cold-outreach** | First-touch cold emails for prospects with zero prior relationship. Value-first framing, signal-based hooks from prospect dossiers, different rules than follow-up-loop |
 
 Each skill is self-contained. Invoke them independently or combine them in workflows. **Monday-morning pair:** run `performance-review` first (what worked last week), then `pipeline-analysis` (what to work on next). The rest of the week runs the action skills the analysis recommended.
+
+### Lead scoring (built-in utility)
+
+Every contact gets a **fit score** (ICP match), **engagement score** (reply history), and **priority tier** (A/B/C/D). Scoring runs as a natural step — not a separate skill — when other skills need to prioritize. Configure your ICP definition in [`knowledge/scoring-config.md`](knowledge/scoring-config.md).
+
+```bash
+npx tsx src/scoring.ts score-tracker   # score all tracker contacts
+npx tsx src/scoring.ts rank            # print contacts sorted by priority
+```
 
 ---
 
@@ -133,6 +144,18 @@ Assemble full context from HubSpot + Gmail history + tracker, generate a
 brief, then draft the email. Ask me before creating the Gmail draft.
 ```
 
+### Research a prospect and send a cold email
+
+```
+Read skills/prospect-research.md and CLAUDE.md.
+Research these companies and create dossiers:
+- john@acme.com, John Smith, Acme Inc, acme.com
+- jane@beta.io, Jane Doe, Beta Corp, beta.io
+
+Then read skills/cold-outreach.md and CLAUDE.md.
+Use the dossiers to draft first-touch cold emails for each lead.
+```
+
 See [`prompts/invoke-skill.md`](prompts/invoke-skill.md) for every skill invocation, every mode, and workflow examples.
 
 ---
@@ -180,13 +203,34 @@ Morning: Run inbox-classifier with "newer_than:1d"
 Human reviews reply drafts (5 min) and sends
 ```
 
+### Workflow E — Cold outreach pipeline (new leads)
+
+```
+1. Build lead list (manual curation, purchased list, or LinkedIn export)
+2. Run prospect-research → dossiers with pain-point hypotheses
+3. Run cold-outreach → signal-based cold emails using dossiers
+4. Human reviews drafts and sends
+5. Run inbox-classifier after 2-3 days
+6. Positive replies → compose-reply for deep follow-up
+```
+
+### Workflow F — Scored pipeline prioritization
+
+```
+1. Run scoring: npx tsx src/scoring.ts score-tracker
+2. Run pipeline-analysis (now includes score distribution)
+3. A-tier leads without outreach → prospect-research + cold-outreach
+4. B-tier leads → follow-up-loop or research-outreach
+5. D-tier leads → lead-recovery to decide if worth keeping
+```
+
 ---
 
 ## State files
 
 Two state files live in the repo — both single sources of truth for their concern:
 
-1. **`tracker.db`** — per-contact tracker (SQLite, 13 columns). Every draft, skip, error, reply classification. Backed by SQLite as of v2.6 — binary-safe fields, WAL concurrency, indexed lookups. Dump to TSV or JSON on demand via `npx tsx src/tracker.ts export`. Full schema + CLI reference in [`docs/architecture.md`](docs/architecture.md).
+1. **`tracker.db`** — per-contact tracker (SQLite, 16 columns). Every draft, skip, error, reply classification, plus lead scores (`fit_score`, `engagement_score`, `priority_tier`). Backed by SQLite as of v2.6 — binary-safe fields, WAL concurrency, indexed lookups. Dump to TSV or JSON on demand via `npx tsx src/tracker.ts export`. Full schema + CLI reference in [`docs/architecture.md`](docs/architecture.md).
 2. **`knowledge/learnings.md`** — living memory (3 sections). Section A cheat sheets (static, you edit), Section B running log (append-only, skills write), Section C distilled patterns (human-promoted from B). Every skill reads this at start, writes at end via `src/learnings.ts`. The feedback loop is closed weekly by `performance-review`, which proposes Section C rules with evidence that you copy-paste manually.
 
 Both files are gitignored.
@@ -237,8 +281,9 @@ Four tabs: Pipeline, Performance, Skills, Learnings. Localhost-only, never deplo
 - [`CLAUDE.md`](CLAUDE.md) — email generation rules (tone, greeting, signatures)
 - [`program.md`](program.md) — universal skill constraints + teardown rules
 - [`knowledge/research-config.md`](knowledge/research-config.md) — configure the `research-outreach` audit type
+- [`knowledge/scoring-config.md`](knowledge/scoring-config.md) — configure lead scoring ICP definition + tier matrix
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to add a skill, a tool, or a new harness adapter
-- [`ROADMAP.md`](ROADMAP.md) — known gaps vs mature outbound tooling (scoring, meeting booking, sequences, deep CRM)
+- [`ROADMAP.md`](ROADMAP.md) — known gaps vs mature outbound tooling (meeting booking, sequences, deep CRM)
 - [`CHANGELOG.md`](CHANGELOG.md) — version history
 
 ---

@@ -38,6 +38,7 @@ type SkillTag =
   | 'research-outreach'
   | 'compose-reply'
   | 'inbox-classifier'
+  | 'cold-outreach'
   | 'unknown';
 
 type Outcome =
@@ -147,6 +148,7 @@ function inferSkill(notesSummary: string, rowStatus: string): SkillTag {
   const trimmed = notesSummary.trim();
   if (trimmed.startsWith('RES:')) return 'research-outreach';
   if (trimmed.startsWith('COMPOSE:')) return 'compose-reply';
+  if (trimmed.startsWith('COLD:')) return 'cold-outreach';
   // inbox-classifier doesn't typically create NEW tracker rows — it updates
   // existing ones with reply fields. A row with classification but no draft
   // source prefix is still a follow-up-loop row that received a reply.

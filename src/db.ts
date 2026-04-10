@@ -48,6 +48,9 @@ export const COLUMNS = [
   'reply_classification',
   'reply_draft_id',
   'hubspot_status_after',
+  'fit_score',
+  'engagement_score',
+  'priority_tier',
 ] as const;
 
 export type ColumnName = (typeof COLUMNS)[number];
@@ -77,12 +80,25 @@ db.exec(`
     reply_received_at     TEXT NOT NULL DEFAULT '',
     reply_classification  TEXT NOT NULL DEFAULT '',
     reply_draft_id        TEXT NOT NULL DEFAULT '',
-    hubspot_status_after  TEXT NOT NULL DEFAULT ''
+    hubspot_status_after  TEXT NOT NULL DEFAULT '',
+    fit_score             TEXT NOT NULL DEFAULT '',
+    engagement_score      TEXT NOT NULL DEFAULT '',
+    priority_tier         TEXT NOT NULL DEFAULT ''
   );
   CREATE INDEX IF NOT EXISTS idx_tracker_drafted_at     ON tracker(drafted_at);
   CREATE INDEX IF NOT EXISTS idx_tracker_status         ON tracker(status);
   CREATE INDEX IF NOT EXISTS idx_tracker_classification ON tracker(reply_classification);
 `);
+
+// v2.8 migration: add scoring columns to existing DBs that lack them.
+const tableInfo = db.prepare("PRAGMA table_info('tracker')").all() as { name: string }[];
+const existingCols = new Set(tableInfo.map((c) => c.name));
+for (const col of ['fit_score', 'engagement_score', 'priority_tier']) {
+  if (!existingCols.has(col)) {
+    db.exec(`ALTER TABLE tracker ADD COLUMN ${col} TEXT NOT NULL DEFAULT ''`);
+  }
+}
+db.exec('CREATE INDEX IF NOT EXISTS idx_tracker_priority_tier ON tracker(priority_tier)');
 
 runLegacyImportIfNeeded();
 
@@ -174,6 +190,21 @@ const stmtUpdateReply = db.prepare(`
     hubspot_status_after = COALESCE(NULLIF(?, ''), hubspot_status_after)
   WHERE email = ?
 `);
+const stmtUpdateScores = db.prepare(`
+  UPDATE tracker SET
+    fit_score        = ?,
+    engagement_score = ?,
+    priority_tier    = ?
+  WHERE email = ?
+`);
+const stmtRowsByPriority = db.prepare(
+  `SELECT ${COLUMN_LIST} FROM tracker
+   WHERE priority_tier != ''
+   ORDER BY
+     CASE priority_tier WHEN 'A' THEN 1 WHEN 'B' THEN 2 WHEN 'C' THEN 3 WHEN 'D' THEN 4 ELSE 5 END,
+     CAST(fit_score AS INTEGER) DESC,
+     CAST(engagement_score AS INTEGER) DESC`,
+);
 
 // ---------------- Public data-layer API ----------------
 
@@ -241,4 +272,30 @@ export function updateReplyFields(
     normalized,
   );
   return result.changes > 0;
+}
+
+/**
+ * Update scoring fields for an existing row. Returns true if a row was matched.
+ */
+export function updateScores(
+  email: string,
+  fitScore: number,
+  engagementScore: number,
+  priorityTier: string,
+): boolean {
+  const normalized = email.trim().toLowerCase();
+  const result = stmtUpdateScores.run(
+    String(fitScore),
+    String(engagementScore),
+    priorityTier,
+    normalized,
+  );
+  return result.changes > 0;
+}
+
+/**
+ * Returns all scored rows ordered by priority tier (A first), then by fit_score desc.
+ */
+export function rowsByPriority(): RowObject[] {
+  return stmtRowsByPriority.all() as RowObject[];
 }

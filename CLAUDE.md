@@ -38,6 +38,10 @@ The agent can run on two interchangeable paths — pick whichever your harness s
 - Gmail: `npx tsx src/tools/gmail.ts <command>`
 - WebFetch: `npx tsx src/tools/webfetch.ts <command>`
 
+**Shared utility (both paths):**
+
+- Scoring: `npx tsx src/scoring.ts <command>` — lead scoring (fit + engagement → priority tier)
+
 You can mix both paths. See `AGENTS.md` for harness compatibility details.
 
 ---

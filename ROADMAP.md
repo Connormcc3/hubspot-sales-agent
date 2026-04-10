@@ -6,21 +6,18 @@ If you want to pick one up, open a PR. See [`CONTRIBUTING.md`](CONTRIBUTING.md) 
 
 ---
 
-## 1. Qualification and scoring
+## 1. ~~Qualification and scoring~~ — SHIPPED (v2.8)
 
-**What's missing.** The agent treats all contacts roughly the same. There's no lead scoring, no prioritization by ICP fit or intent signals, no tiering into A/B/C buckets.
+**Implemented.** Lead scoring utility at `src/scoring.ts` with configurable ICP definition at `knowledge/scoring-config.md`.
 
-**What happens today.** `follow-up-loop` processes contacts in whatever order HubSpot returns them, subject to lead-status filtering and skip flags. `pipeline-analysis` recommends which *skill* to run next, not which *leads* deserve attention first. A high-fit prospect with buying signals sits next to a tire-kicker in the same queue.
+- **Fit score** (0-100) from HubSpot properties: industry, company size, job title, location. Weights configurable.
+- **Engagement score** (0-100) from tracker data: reply history, classification, recency, touch count.
+- **Priority tier** (A/B/C/D) from fit x engagement matrix.
+- Tracker columns: `fit_score`, `engagement_score`, `priority_tier` (added in v2.8 schema migration).
+- CLI: `npx tsx src/scoring.ts score|score-tracker|rank|tier|update`
+- Skills updated: `follow-up-loop` and `cold-outreach` sort by tier; `prospect-research` populates fit scores from research; `pipeline-analysis` reports score distribution.
 
-**What it would take.**
-- A scoring model — ICP fit (firmographics from HubSpot properties), engagement (reply history from the tracker), intent signals (website visits, email opens — neither currently tracked), recency.
-- Either (a) new tracker columns `fit_score` / `intent_score` / `priority`, populated by a new skill like `score-leads.md`, or (b) a `src/scoring.ts` helper that computes scores on-demand from tracker + HubSpot data.
-- `follow-up-loop` and `research-outreach` updated to sort their work queues by score instead of default HubSpot order.
-- An "A-tier only" invocation mode for batch sends.
-
-**Complexity.** Medium. The hard part is not the code — it's picking a scoring model that actually reflects your business. A generic score that treats every user's ICP the same is worse than no score. Likely needs to be configurable in `knowledge/scoring-config.md` (same pattern as `research-config.md`).
-
-**Priority.** Matters at 500+ contacts. Below that, humans can eyeball the list.
+**What's still missing.** Intent signals (website visits, email opens) are not tracked — these would further refine the engagement score but require webhook infrastructure.
 
 ---
 

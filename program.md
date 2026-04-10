@@ -24,8 +24,25 @@ Automate the outbound sales flow:
 | **research-outreach** | `skills/research-outreach.md` | Research-driven personalized outreach (configurable audit type) |
 | **lead-recovery** | `skills/lead-recovery.md` | Decision framework for stale deals |
 | **compose-reply** | `skills/compose-reply.md` | Deep-context single-lead composer with full history + custom context |
+| **prospect-research** | `skills/prospect-research.md` | Deep intelligence gathering — company profile, signals, decision-maker, pain-point hypotheses. Outputs dossiers for `cold-outreach` |
+| **cold-outreach** | `skills/cold-outreach.md` | First-touch cold emails — value-first framing, uses prospect dossiers or basic data. Different rules than follow-up-loop |
 
 See `prompts/invoke-skill.md` for how to invoke each skill.
+
+## Scoring Utility
+
+Lead scoring is a **utility**, not a skill. It runs as a natural step when skills need to prioritize contacts.
+
+```bash
+npx tsx src/scoring.ts score <email> [--data <json>]   # score one contact
+npx tsx src/scoring.ts score-tracker                    # score all tracker contacts (engagement)
+npx tsx src/scoring.ts rank                             # print all scored contacts by priority
+npx tsx src/scoring.ts tier <email>                     # print priority tier for one contact
+npx tsx src/scoring.ts update <email> <fit> <eng>       # manual score override
+```
+
+Configuration: `knowledge/scoring-config.md` defines ICP weights and tier matrix (A/B/C/D).
+Skills that use scoring: `follow-up-loop` (sort queue), `cold-outreach` (prioritize leads), `pipeline-analysis` (report distribution), `prospect-research` (update fit scores from research).
 
 ## Two Paths: MCP or CLI
 
@@ -94,5 +111,7 @@ Each skill defines its own stopping rules:
 - **research-outreach:** Process the given lead list, then STOP
 - **lead-recovery:** Analyze the given deals, then STOP (no outreach, just recommendations)
 - **compose-reply:** ONE-SHOT — process one lead, output brief + draft, then STOP
+- **prospect-research:** Process the given lead list, then STOP (research only, no outreach)
+- **cold-outreach:** Process the given lead list, then STOP
 
 Refer to each skill file for the exact behavior.

@@ -17,7 +17,7 @@ flowchart TB
         Knowledge["knowledge/\n(learnings + research config)"]
     end
 
-    subgraph Skills["7 Skills"]
+    subgraph Skills["9 Skills"]
         Skill0["skills/pipeline-analysis.md"]
         Skill1["skills/performance-review.md"]
         Skill2["skills/follow-up-loop.md"]
@@ -25,7 +25,11 @@ flowchart TB
         Skill4["skills/research-outreach.md"]
         Skill5["skills/lead-recovery.md"]
         Skill6["skills/compose-reply.md"]
+        Skill7["skills/prospect-research.md"]
+        Skill8["skills/cold-outreach.md"]
     end
+
+    Scoring["src/scoring.ts\n(fit + engagement → tier)"]
 
     subgraph Tools["Tool Paths (pick one)"]
         MCP["MCP Tools\n(Claude Code)"]
@@ -38,12 +42,14 @@ flowchart TB
         Web["Web (for research)"]
     end
 
-    Tracker["tracker.db\n(SQLite, 13 columns)"]
+    Tracker["tracker.db\n(SQLite, 16 columns)"]
 
     Human -->|natural language| Harness
     Harness --> Shared
     Harness --> Skills
     Skills --> Tools
+    Skills --> Scoring
+    Scoring --> Tracker
     Tools --> APIs
     Skills --> Tracker
     APIs -.->|data| Skills
@@ -68,23 +74,27 @@ hubspot-sales-agent/
 ├── program.md                    # Shared constraints, setup, error handling
 ├── CLAUDE.md                     # Shared email generation rules (greeting, tone, templates)
 ├── AGENTS.md                     # Harness compatibility guide
-├── skills/                       # 7 composable skills
+├── skills/                       # 9 composable skills
 │   ├── pipeline-analysis.md      # Full pipeline health check + recommendations (forward-looking)
 │   ├── performance-review.md     # Closes the feedback loop — joins drafts with outcomes, proposes Section C rules (backward-looking)
 │   ├── follow-up-loop.md         # Bulk outreach autonomous loop
 │   ├── inbox-classifier.md       # 8-category reply classification + auto-drafts
 │   ├── research-outreach.md      # Research-driven personalized outreach
 │   ├── lead-recovery.md          # Decision framework for stale deals
-│   └── compose-reply.md          # Deep-context single-lead composer
+│   ├── compose-reply.md          # Deep-context single-lead composer
+│   ├── prospect-research.md      # Deep intelligence gathering — dossiers for cold-outreach
+│   └── cold-outreach.md          # First-touch cold emails — value-first, signal-based hooks
 ├── knowledge/                    # Living knowledge base (edit for your business)
 │   ├── learnings.md              # Living memory — skills read on every run, append at end (Section A cheat sheets, Section B running log, Section C distilled patterns)
-│   └── research-config.md        # Define your research/audit approach
+│   ├── research-config.md        # Define your research/audit approach
+│   └── scoring-config.md         # Define ICP + scoring weights + tier matrix
 ├── prompts/
 │   ├── invoke-skill.md           # All skill invocations + workflows
 │   └── run-followup.md           # Quick-start prompts
 ├── src/
 │   ├── db.ts                     # Shared SQLite data layer (schema, prepared statements, TSV→SQLite import)
 │   ├── tracker.ts                # Tracker CLI — thin wrapper over db.ts (read/rows/exists/append/update/export)
+│   ├── scoring.ts                # Lead scoring CLI — fit + engagement scores → priority tier (A/B/C/D)
 │   ├── learnings.ts              # Learnings CLI (append heartbeat/observation to learnings.md Section B)
 │   ├── performance.ts            # Performance math (queries tracker.db via db.ts, computes per-segment contrasts → JSON for performance-review)
 │   └── tools/                    # Harness-agnostic CLI wrappers
@@ -100,6 +110,7 @@ hubspot-sales-agent/
 │   ├── analysis/                 # Pipeline analysis reports
 │   ├── performance/              # Weekly performance-review reports
 │   ├── lead-dossiers/            # Deep-context briefs from compose-reply
+│   ├── prospect-dossiers/        # Strategic company dossiers from prospect-research
 │   ├── errors.log                # Runtime error log
 │   └── recovery-*.md             # Lead recovery analysis outputs
 ├── ui/                           # Local dashboard (Next.js 16, App Router)
@@ -142,23 +153,26 @@ The agent has two state files — both living in the repo, both are single sourc
 
 Weekly performance reports land in **`output/performance/<date>.md`** — written by `performance-review`, human reviews them to decide which Section C rules to promote.
 
-### Tracker columns (13 total, SQLite schema in `src/db.ts`)
+### Tracker columns (16 total, SQLite schema in `src/db.ts`)
 
 | Column | Description | Written By |
 |--------|-------------|-----------|
-| `email` | Unique identifier (lowercase, `COLLATE NOCASE`) | follow-up-loop, research-outreach |
-| `firstname`, `lastname`, `company` | Contact master data | follow-up-loop, research-outreach |
-| `lead_status` | HubSpot lead status at draft time | follow-up-loop, research-outreach |
-| `notes_summary` | 1-sentence summary of HubSpot notes | follow-up-loop, research-outreach |
-| `draft_id` | Gmail draft ID of outreach email | follow-up-loop, research-outreach |
+| `email` | Unique identifier (lowercase, `COLLATE NOCASE`) | follow-up-loop, research-outreach, cold-outreach |
+| `firstname`, `lastname`, `company` | Contact master data | follow-up-loop, research-outreach, cold-outreach |
+| `lead_status` | HubSpot lead status at draft time | follow-up-loop, research-outreach, cold-outreach |
+| `notes_summary` | 1-sentence summary; prefix indicates skill: `RES:`, `COMPOSE:`, `COLD:` | all outreach skills |
+| `draft_id` | Gmail draft ID of outreach email | follow-up-loop, research-outreach, cold-outreach |
 | `status` | drafted / skipped / error / declined / bounced / awaiting_human | all |
-| `drafted_at` | ISO timestamp of draft creation | follow-up-loop, research-outreach |
+| `drafted_at` | ISO timestamp of draft creation | follow-up-loop, research-outreach, cold-outreach |
 | `reply_received_at` | ISO timestamp when reply arrived | inbox-classifier |
 | `reply_classification` | POSITIVE_INTENT / POSITIVE_MEETING / NEGATIVE_HARD / etc. | inbox-classifier |
 | `reply_draft_id` | Gmail draft ID of reply draft | inbox-classifier |
 | `hubspot_status_after` | HubSpot lead status after sync | inbox-classifier |
+| `fit_score` | ICP fit score 0-100 (from HubSpot properties) | scoring.ts, prospect-research |
+| `engagement_score` | Engagement score 0-100 (from tracker signals) | scoring.ts |
+| `priority_tier` | Priority tier A/B/C/D (from fit x engagement matrix) | scoring.ts |
 
-Indexes: `drafted_at` (performance windowing), `status` (UI filter pills), `reply_classification` (inbox-classifier queries). `email` is the primary key.
+Indexes: `drafted_at` (performance windowing), `status` (UI filter pills), `reply_classification` (inbox-classifier queries), `priority_tier` (scoring queries). `email` is the primary key.
 
 **Tracker CLI** (same contract pre- and post-v2.6):
 
@@ -170,6 +184,18 @@ npx tsx src/tracker.ts append "<tab-separated-row>"                   # add a ne
 npx tsx src/tracker.ts update <email> <classification> [draft_id]     # set reply fields
 npx tsx src/tracker.ts export [--format tsv|json] [--out path]        # dump current DB state (v2.6+)
 ```
+
+**Scoring CLI** (utility, not a skill — called by other skills to prioritize contacts):
+
+```bash
+npx tsx src/scoring.ts score <email> [--data <json>]   # score one contact (fit from JSON, engagement from tracker)
+npx tsx src/scoring.ts score-tracker                    # score all tracker contacts (engagement only, fit defaults to 50)
+npx tsx src/scoring.ts rank                             # all scored contacts sorted by priority tier
+npx tsx src/scoring.ts tier <email>                     # print priority tier for one contact
+npx tsx src/scoring.ts update <email> <fit> <eng>       # manual score override
+```
+
+Configuration: [`../knowledge/scoring-config.md`](../knowledge/scoring-config.md) defines ICP weights and tier matrix.
 
 **Learnings CLI** (written by skills at end-of-run, see `program.md` universal teardown rule):
 
