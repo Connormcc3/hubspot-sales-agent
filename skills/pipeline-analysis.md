@@ -1,6 +1,6 @@
 # Skill: pipeline-analysis
 
-> **Architecture:** One of 7 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 10 skills in the Sales Agent. See `README.md` for the overview.
 > **Related skills:** This skill is the "zoom out" — it analyzes the whole HubSpot pipeline and recommends which action-skills to run next (`follow-up-loop`, `research-outreach`, `lead-recovery`).
 
 ---
@@ -30,11 +30,11 @@ One-shot run. No loop, no background work. When the analysis is complete, print 
 
 1. **Read tracker:** `npx tsx src/tracker.ts read` → set of emails already processed by the agent
 2. **Fetch all contacts** from HubSpot:
-   - **MCP:** `mcp__claude_ai_HubSpot__search_crm_objects` with `objectType=contacts`, paginate through all
+   - **MCP:** `mcp__hubspot__search_crm_objects` with `objectType=contacts`, paginate through all
    - **CLI:** `npx tsx src/tools/hubspot.ts contacts list --limit 100 --offset <N>` in a loop
    - Properties: `firstname`, `lastname`, `email`, `company`, `jobtitle`, `hs_lead_status`, `industry`, `lifecyclestage`, `createdate`, `lastmodifieddate`
 3. **Fetch all deals**:
-   - **MCP:** `mcp__claude_ai_HubSpot__search_crm_objects` with `objectType=deals`
+   - **MCP:** `mcp__hubspot__search_crm_objects` with `objectType=deals`
    - **CLI:** `npx tsx src/tools/hubspot.ts deals list --limit 100 --offset <N>` in a loop
    - Properties: `dealname`, `amount`, `dealstage`, `closedate`, `hs_lastmodifieddate`, `createdate`
 

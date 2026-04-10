@@ -1,6 +1,6 @@
 # Skill: inbox-classifier
 
-> **Architecture:** One of 7 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 10 skills in the Sales Agent. See `README.md` for the overview.
 > **Shared rules:** `CLAUDE.md` (reply templates follow the same greeting/tone rules).
 > **Related:** Reads lessons from `knowledge/learnings.md`.
 
@@ -33,7 +33,7 @@ Manual. Recommended: 1-2x daily, or after each outreach wave (24-48h later). Inv
 
 1. **Read tracker:** `npx tsx src/tracker.ts read` → set of all `email` addresses we have drafted
 2. **Search inbox:**
-   - **MCP:** `mcp__claude_ai_Gmail__gmail_search_messages` with `query="newer_than:7d in:inbox"`
+   - **MCP:** `mcp__gmail__gmail_search_messages` with `query="newer_than:7d in:inbox"`
    - **CLI:** `npx tsx src/tools/gmail.ts inbox search --query "newer_than:7d in:inbox"`
 3. **Filter replies:** keep threads where:
    - Last message is incoming (not from us)
@@ -46,12 +46,12 @@ Manual. Recommended: 1-2x daily, or after each outreach wave (24-48h later). Inv
 ## Per-Reply 6-Step Loop
 
 ### Step 1 — Load thread
-- **MCP:** `mcp__claude_ai_Gmail__gmail_read_thread(threadId)` → full thread (need original outreach + all replies)
+- **MCP:** `mcp__gmail__gmail_read_thread(threadId)` → full thread (need original outreach + all replies)
 - **CLI:** `npx tsx src/tools/gmail.ts thread read --id <threadId>`
 
 ### Step 2 — Load HubSpot context
 Find the contact via `fromEmail`:
-- **MCP:** `mcp__claude_ai_HubSpot__search_crm_objects` with `objectType=contacts`, query=email
+- **MCP:** `mcp__hubspot__search_crm_objects` with `objectType=contacts`, query=email
 - **CLI:** `npx tsx src/tools/hubspot.ts contacts search --email <email>`
 
 Read lead status, recent notes, associated deals.
@@ -136,7 +136,7 @@ Answer the question concretely in 2-4 sentences, then include the scheduling lin
 **NO reply draft.** Warning in run report — human must check SPF/DKIM/DMARC.
 
 ### Step 5 — HubSpot update
-- **MCP:** `mcp__claude_ai_HubSpot__manage_crm_objects`
+- **MCP:** `mcp__hubspot__manage_crm_objects`
 - **CLI:** `npx tsx src/tools/hubspot.ts contacts update --id <id> --property hs_lead_status --value UNQUALIFIED`
 
 Update lead status (NEGATIVE_* → UNQUALIFIED, POSITIVE_INTENT → IN_PROGRESS).

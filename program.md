@@ -51,8 +51,8 @@ This agent runs on any local agent harness. Each skill supports two interchangea
 
 **Path A — MCP tools (any MCP-capable harness):**
 Works with Claude Code, Cursor, Continue, Windsurf, Zed, or any custom harness with an MCP client. Install the HubSpot + Gmail MCP servers in your harness and go.
-- HubSpot via `mcp__claude_ai_HubSpot__*`
-- Gmail via `mcp__claude_ai_Gmail__*`
+- HubSpot via `mcp__hubspot__*` (see CLAUDE.md for prefix details)
+- Gmail via `mcp__gmail__*` (see CLAUDE.md for prefix details)
 
 **Path B — Local CLI tools (universal fallback):**
 Works with any harness that can execute shell commands. Run `npm install`, fill in `.env`, and the agent shells out to:

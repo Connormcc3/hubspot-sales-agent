@@ -1,6 +1,6 @@
 # Skill: compose-reply
 
-> **Architecture:** One of 7 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 10 skills in the Sales Agent. See `README.md` for the overview.
 > **Shared rules:** `CLAUDE.md` (greeting, tone, templates, signatures).
 > **Related skills:** `inbox-classifier` handles bulk reply classification. This skill is for the ONE lead where you need full context and careful composition.
 
@@ -55,7 +55,7 @@ Read `knowledge/learnings.md`. Section A informs greeting/tone, Section B (recen
 
 ### Step 1 — Identify the lead
 Resolve the input to a HubSpot contact:
-- **MCP:** `mcp__claude_ai_HubSpot__search_crm_objects` with `objectType=contacts`, query by email
+- **MCP:** `mcp__hubspot__search_crm_objects` with `objectType=contacts`, query by email
 - **CLI:** `npx tsx src/tools/hubspot.ts contacts search --email <email>`
 
 If not found in HubSpot: continue with email history only, flag as "no HubSpot record".
@@ -65,7 +65,7 @@ If not found in HubSpot: continue with email history only, flag as "no HubSpot r
 Fetch **everything** available about this lead. Unlike `follow-up-loop` which reads only the last few notes, this skill reads the full history.
 
 **2a. HubSpot notes (ALL notes, not last 5):**
-- **MCP:** `mcp__claude_ai_HubSpot__search_crm_objects` — `objectType=notes`, filter by contact ID, sort by timestamp ASC for chronological order
+- **MCP:** `mcp__hubspot__search_crm_objects` — `objectType=notes`, filter by contact ID, sort by timestamp ASC for chronological order
 - **CLI:** `npx tsx src/tools/hubspot.ts notes list --contact-id <id> --limit 200`
 
 **2b. HubSpot deals linked to this contact:**
@@ -73,10 +73,10 @@ Fetch **everything** available about this lead. Unlike `follow-up-loop` which re
 - Note the deal trajectory: did they come close? What blocked it? When did it go cold?
 
 **2c. Email history (both directions):**
-- **MCP:** `mcp__claude_ai_Gmail__gmail_search_messages` — query: `from:<email> OR to:<email>`
+- **MCP:** `mcp__gmail__gmail_search_messages` — query: `from:<email> OR to:<email>`
 - **CLI:** `npx tsx src/tools/gmail.ts inbox search --query "from:<email> OR to:<email>"`
 - For each thread, read the full bodies (not just snippets):
-  - **MCP:** `mcp__claude_ai_Gmail__gmail_read_thread`
+  - **MCP:** `mcp__gmail__gmail_read_thread`
   - **CLI:** `npx tsx src/tools/gmail.ts thread read --id <threadId>`
 
 **2d. Prior agent interactions:**
@@ -149,7 +149,7 @@ Print to console:
 3. Ask: "Create Gmail draft? (y/n)"
 
 **If user confirms:**
-- **MCP:** `mcp__claude_ai_Gmail__gmail_create_draft` with `contentType=text/plain` (or `text/html` if body is HTML)
+- **MCP:** `mcp__gmail__gmail_create_draft` with `contentType=text/plain` (or `text/html` if body is HTML)
 - **CLI:** `npx tsx src/tools/gmail.ts draft create --to <email> --subject "..." --body "..."`
 - Append to tracker: `npx tsx src/tracker.ts append "<email>\t<firstname>\t<lastname>\t<company>\t<lead_status>\tCOMPOSE: <1-sentence summary of angle used>\t<draft_id>\tdrafted\t<ISO timestamp>"`
 

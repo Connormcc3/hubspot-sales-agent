@@ -34,7 +34,7 @@ cp .env.example .env
 
 1. Go to HubSpot Settings → Integrations → Private Apps
 2. Create a new Private App
-3. Scopes needed: `crm.objects.contacts.read`, `crm.objects.contacts.write`, `crm.objects.deals.read`, `crm.objects.notes.read`, `crm.objects.notes.write`
+3. Scopes needed: `crm.objects.contacts.read`, `crm.objects.contacts.write`, `crm.objects.deals.read`, `crm.objects.deals.write`, `crm.objects.notes.read`, `crm.objects.notes.write`
 4. Copy the token (starts with `pat-`) into `.env` as `HUBSPOT_API_TOKEN`
 
 ---
@@ -62,6 +62,20 @@ npx tsc --noEmit                        # TypeScript type check, should exit 0
 ```
 
 If all of those succeed, you're ready. Head back to the [README](../README.md) and run your first skill.
+
+---
+
+## MCP Setup (alternative to CLI)
+
+If your harness supports MCP (Claude Code, Cursor, Continue, Windsurf), you can skip the `.env` setup for HubSpot and Gmail and use MCP servers instead:
+
+1. **HubSpot MCP server:** Install and register a HubSpot MCP server in your harness. Auth is handled by the MCP server itself — no `HUBSPOT_API_TOKEN` in `.env` needed.
+2. **Gmail MCP server:** Install and register a Gmail MCP server. Auth is handled by the server — no Google OAuth vars in `.env` needed.
+3. **Verify:** The agent will automatically detect MCP tools when available and prefer them over CLI.
+
+You can also **mix paths** — for example, use MCP for HubSpot but CLI for Gmail (or vice versa). See `AGENTS.md` for details.
+
+> **Note:** MCP tool names vary by harness. Skill files use generic prefixes (`mcp__hubspot__*`, `mcp__gmail__*`). See `CLAUDE.md` Tool Options for the full tool list and how to map to your harness's actual prefix.
 
 ---
 

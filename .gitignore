@@ -25,6 +25,7 @@ output/research-reports/*.md
 output/recovery-*.md
 output/analysis/*.md
 output/lead-dossiers/*.md
+output/prospect-dossiers/*.md
 output/performance/*.md
 
 # Keep directory structure
@@ -32,6 +33,7 @@ output/performance/*.md
 !output/research-reports/.gitkeep
 !output/analysis/.gitkeep
 !output/lead-dossiers/.gitkeep
+!output/prospect-dossiers/.gitkeep
 !output/performance/.gitkeep
 
 # Editor

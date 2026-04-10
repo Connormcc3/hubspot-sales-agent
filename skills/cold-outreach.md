@@ -1,6 +1,6 @@
 # Skill: cold-outreach
 
-> **Architecture:** One of 9 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 10 skills in the Sales Agent. See `README.md` for the overview.
 > **Shared rules:** `CLAUDE.md` (greeting, tone, signatures).
 > **Related skills:** `prospect-research.md` produces dossiers this skill consumes. `follow-up-loop.md` handles warm contacts — this skill handles first-touch cold contacts.
 
@@ -176,7 +176,7 @@ YOUR_DOMAIN
 
 ### Step 5 — Create Gmail draft
 
-- **MCP:** `mcp__claude_ai_Gmail__gmail_create_draft` with `to`, `subject`, `body`, `contentType=text/plain`
+- **MCP:** `mcp__gmail__gmail_create_draft` with `to`, `subject`, `body`, `contentType=text/plain`
 - **CLI:** `npx tsx src/tools/gmail.ts draft create --to <email> --subject "..." --body "..."`
 
 Save the returned `draftId`.
@@ -184,7 +184,7 @@ Save the returned `draftId`.
 ### Step 6 — Create HubSpot contact (if new)
 
 If the contact doesn't exist in HubSpot:
-- **MCP:** `mcp__claude_ai_HubSpot__manage_crm_objects` — create contact with `email`, `firstname`, `lastname`, `company`, `hs_lead_status=NEW`
+- **MCP:** `mcp__hubspot__manage_crm_objects` — create contact with `email`, `firstname`, `lastname`, `company`, `hs_lead_status=NEW`
 - **CLI:** `npx tsx src/tools/hubspot.ts contacts create --email <email> --firstname <fn> --lastname <ln> --company <co> --hs_lead_status NEW`
 
 If the contact already exists: no HubSpot changes (cold-outreach doesn't modify existing contacts).

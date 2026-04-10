@@ -35,12 +35,12 @@ Conversational. Responds to individual requests. No loop.
 
 | Action | MCP Tool |
 |--------|----------|
-| Search contacts/deals/tasks | `mcp__claude_ai_HubSpot__search_crm_objects` |
-| Get single object by ID | `mcp__claude_ai_HubSpot__get_crm_objects` |
-| Create/update/delete objects | `mcp__claude_ai_HubSpot__manage_crm_objects` |
-| List properties/fields | `mcp__claude_ai_HubSpot__get_properties` |
-| Find HubSpot users (owners) | `mcp__claude_ai_HubSpot__search_owners` |
-| Account info | `mcp__claude_ai_HubSpot__get_user_details` |
+| Search contacts/deals/tasks | `mcp__hubspot__search_crm_objects` |
+| Get single object by ID | `mcp__hubspot__get_crm_objects` |
+| Create/update/delete objects | `mcp__hubspot__manage_crm_objects` |
+| List properties/fields | `mcp__hubspot__get_properties` |
+| Find HubSpot users (owners) | `mcp__hubspot__search_owners` |
+| Account info | `mcp__hubspot__get_user_details` |
 
 ### Path B — CLI (any harness with shell access)
 
@@ -83,7 +83,7 @@ User: "Create a contact for john@acme.com, John Smith, CEO at Acme Inc"
 
 **MCP:**
 ```
-mcp__claude_ai_HubSpot__manage_crm_objects
+mcp__hubspot__manage_crm_objects
   action: create
   objectType: contacts
   properties: { email: "john@acme.com", firstname: "John", lastname: "Smith", company: "Acme Inc", jobtitle: "CEO", hs_lead_status: "NEW" }
@@ -102,8 +102,8 @@ First look up the contact ID, then update:
 
 **MCP:**
 ```
-mcp__claude_ai_HubSpot__search_crm_objects → get contact ID
-mcp__claude_ai_HubSpot__manage_crm_objects → update property
+mcp__hubspot__search_crm_objects → get contact ID
+mcp__hubspot__manage_crm_objects → update property
 ```
 
 **CLI:**
@@ -116,14 +116,14 @@ npx tsx src/tools/hubspot.ts contacts update --id <id> --property hs_lead_status
 
 User: "Find the contact for jane@beta.io"
 
-**MCP:** `mcp__claude_ai_HubSpot__search_crm_objects` with email filter
+**MCP:** `mcp__hubspot__search_crm_objects` with email filter
 **CLI:** `npx tsx src/tools/hubspot.ts contacts search --email jane@beta.io`
 
 ### Archive a contact
 
 User: "Delete the test contact"
 
-**MCP:** `mcp__claude_ai_HubSpot__manage_crm_objects` with action: archive
+**MCP:** `mcp__hubspot__manage_crm_objects` with action: archive
 **CLI:** `npx tsx src/tools/hubspot.ts contacts delete --id <contactId>`
 
 **Note:** HubSpot archives (soft-deletes), not permanent deletes. Contacts can be restored from HubSpot's recycle bin.
@@ -138,7 +138,7 @@ User: "Create a deal for Acme Inc, 10k, appointment scheduled, close date end of
 
 **MCP:**
 ```
-mcp__claude_ai_HubSpot__manage_crm_objects
+mcp__hubspot__manage_crm_objects
   action: create
   objectType: deals
   properties: { dealname: "Acme Inc", dealstage: "appointmentscheduled", amount: "10000", closedate: "2026-04-30" }

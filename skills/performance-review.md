@@ -1,6 +1,6 @@
 # Skill: performance-review
 
-> **Architecture:** One of 7 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 10 skills in the Sales Agent. See `README.md` for the overview.
 > **Related skills:** `pipeline-analysis` is forward-looking (what to work on next); `performance-review` is backward-looking (what worked). Run both on Mondays, performance-review first.
 > **Shared rules:** `CLAUDE.md` (email rules — the thing being measured).
 
@@ -46,7 +46,7 @@ One-shot. Loads data → runs math → fetches a few drafts for deepening → wr
 
 3. **For each `proposable` contrast (the tool flags these automatically, `proposable: true`):**
    - Fetch a sample of 2-3 drafts from the winning bucket:
-     - **MCP:** `mcp__claude_ai_Gmail__gmail_read_message` with the `draft_id` → message
+     - **MCP:** `mcp__gmail__gmail_read_message` with the `draft_id` → message
      - **CLI:** `npx tsx src/tools/gmail.ts draft read --id <draft_id>`
    - Extract the subject line from `message.payload.headers` (the header named `Subject`).
    - Decode `message.payload.body.data` (or `message.payload.parts[0].body.data`) from base64url and apply a greeting heuristic to recover the tone:

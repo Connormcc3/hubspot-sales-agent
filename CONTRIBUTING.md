@@ -15,10 +15,16 @@ Thanks for your interest in contributing!
 - **`program.md`** — Shared constraints and setup for all skills
 - **`CLAUDE.md`** — Shared email generation rules (referenced by all outreach skills)
 - **`skills/`** — One file per composable skill
+  - `pipeline-analysis.md` — full pipeline health check + recommendations
+  - `performance-review.md` — backward-looking feedback loop
   - `follow-up-loop.md` — bulk outreach autonomous loop
   - `inbox-classifier.md` — 8-category reply classification
   - `research-outreach.md` — research-driven personalized outreach
   - `lead-recovery.md` — decision framework for stale deals
+  - `compose-reply.md` — deep-context single-lead composer
+  - `prospect-research.md` — deep intelligence gathering + dossiers
+  - `cold-outreach.md` — first-touch cold emails
+  - `crm-manager.md` — full HubSpot CRM management from terminal
 - **`knowledge/`** — User-editable knowledge base
   - `learnings.md` — track what works
   - `research-config.md` — define your research approach

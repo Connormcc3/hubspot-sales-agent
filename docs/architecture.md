@@ -133,6 +133,8 @@ The agent is **harness-agnostic**. Every skill file references two interchangeab
 
 Works with **any MCP-capable harness** — Claude Code, Cursor, Continue, Windsurf, Zed, custom harnesses with an MCP client, etc. Install the HubSpot + Gmail MCP servers and you're done (no `.env` needed for the MCP path — auth is handled by the harness).
 
+MCP tool names depend on how your MCP server is registered. Skill files use a generic prefix (`mcp__hubspot__*`, `mcp__gmail__*`) — substitute your harness's actual prefix. See `CLAUDE.md` for the full tool list.
+
 ### Path B — Local CLI tools (universal fallback)
 
 Works with **any harness** that can execute shell commands. Run `npm install`, fill in `.env`, and the agent shells out to `npx tsx src/tools/*.ts`. Use this when:
@@ -150,7 +152,7 @@ You can also **mix both paths** — for example, use MCP for HubSpot and CLI for
 
 The agent has two state files — both living in the repo, both are single sources of truth for their concern:
 
-1. **`tracker.db`** — per-contact tracker (SQLite, 13 columns). Every draft, skip, error, reply classification lives here. Used by every skill for deduplication and reply tracking. Written via `src/tracker.ts` (thin CLI over `src/db.ts`), queried by `src/performance.ts` via an indexed range scan on `drafted_at`. **As of v2.6:** backed by SQLite (`better-sqlite3`) — fixes field escaping (tabs/newlines no longer corrupt rows), concurrency (WAL mode), and scales to tens of thousands of rows. Pre-v2.6 was a flat `table.tsv` file; on first v2.6+ run, any existing `table.tsv` is imported into SQLite and then deleted. Dump the current state to TSV or JSON on demand via `npx tsx src/tracker.ts export`.
+1. **`tracker.db`** — per-contact tracker (SQLite, 16 columns). Every draft, skip, error, reply classification lives here. Used by every skill for deduplication and reply tracking. Written via `src/tracker.ts` (thin CLI over `src/db.ts`), queried by `src/performance.ts` via an indexed range scan on `drafted_at`. **As of v2.6:** backed by SQLite (`better-sqlite3`) — fixes field escaping (tabs/newlines no longer corrupt rows), concurrency (WAL mode), and scales to tens of thousands of rows. Pre-v2.6 was a flat `table.tsv` file; on first v2.6+ run, any existing `table.tsv` is imported into SQLite and then deleted. Dump the current state to TSV or JSON on demand via `npx tsx src/tracker.ts export`.
 2. **`knowledge/learnings.md`** — living memory (3 sections). Cheat sheets, running log, distilled patterns. Read by every skill at start, written via `src/learnings.ts` at end.
 
 Weekly performance reports land in **`output/performance/<date>.md`** — written by `performance-review`, human reviews them to decide which Section C rules to promote.

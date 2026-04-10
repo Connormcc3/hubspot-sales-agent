@@ -8,7 +8,7 @@ This Sales Agent is **harness-agnostic**. The same skill files can run on any lo
 
 Every skill file (`skills/*.md`) references **two interchangeable tool paths**:
 
-- **Path A — MCP tools:** `mcp__claude_ai_HubSpot__*`, `mcp__claude_ai_Gmail__*`
+- **Path A — MCP tools:** `mcp__hubspot__*`, `mcp__gmail__*` (prefix varies by harness — see CLAUDE.md)
 - **Path B — Local CLI tools:** `npx tsx src/tools/hubspot.ts`, `npx tsx src/tools/gmail.ts`, `npx tsx src/tools/webfetch.ts`
 
 Both paths return JSON. The agent's logic (classify, extract, draft, log) is identical regardless of which path you use.

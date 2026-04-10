@@ -1,6 +1,6 @@
 # Skill: research-outreach
 
-> **Architecture:** One of 7 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 10 skills in the Sales Agent. See `README.md` for the overview.
 > **Shared rules:** `CLAUDE.md` (greeting, tone, signatures).
 > **Configuration:** Your research approach is defined in `knowledge/research-config.md`.
 > **Related skill:** `lead-recovery.md` provides the lead list, this skill executes the outreach.
@@ -152,7 +152,7 @@ YOUR_NAME<br>
 ```
 
 ### Step 7 — Create Gmail draft
-- **MCP:** `mcp__claude_ai_Gmail__gmail_create_draft` with `contentType=text/html` ← **IMPORTANT**, different from follow-up-loop
+- **MCP:** `mcp__gmail__gmail_create_draft` with `contentType=text/html` ← **IMPORTANT**, different from follow-up-loop
 - **CLI:** `npx tsx src/tools/gmail.ts draft create --to <email> --subject "..." --body "<html...>" --content-type text/html`
 
 ### Step 8 — Tracker update

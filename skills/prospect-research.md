@@ -1,6 +1,6 @@
 # Skill: prospect-research
 
-> **Architecture:** One of 9 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 10 skills in the Sales Agent. See `README.md` for the overview.
 > **Shared rules:** `CLAUDE.md` (greeting, tone, signatures).
 > **Related skills:** `cold-outreach.md` consumes the dossiers this skill produces. `research-outreach.md` does website-level audits — this skill goes deeper and wider.
 

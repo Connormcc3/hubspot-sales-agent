@@ -2,6 +2,51 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.8.2] - 2026-04-10
+
+### Changed
+- **MCP tool prefixes normalized to generic convention.** All skill files, `program.md`, `AGENTS.md`, and `CLAUDE.md` now use `mcp__hubspot__*` / `mcp__gmail__*` instead of `mcp__claude_ai_HubSpot__*` / `mcp__claude_ai_Gmail__*`. A callout box in `CLAUDE.md` Tool Options explains how to map to your harness's actual prefix (e.g., Claude Code uses `mcp__claude_ai_HubSpot__`). This makes the project truly harness-agnostic — skill files no longer assume a specific MCP server registration.
+- **CLAUDE.md Tool Options expanded.** Was 2 HubSpot + 3 Gmail tool names; now lists all 6 HubSpot tools (`search_crm_objects`, `get_crm_objects`, `manage_crm_objects`, `get_properties`, `search_owners`, `get_user_details`) and all 4 Gmail tools (`gmail_create_draft`, `gmail_search_messages`, `gmail_read_thread`, `gmail_read_message`) plus WebFetch guidance.
+- **Stale skill counts fixed.** 7 skill files said "One of 7 skills", 2 said "One of 9 skills" — all 10 now say "One of 10 skills".
+- **`docs/architecture.md` column count fixed.** "13 columns" → "16 columns" (fit_score, engagement_score, priority_tier added in v2.8.0).
+- **HubSpot scopes updated.** `docs/setup.md` and `.env.example` now include `crm.objects.deals.write` (required by crm-manager for deal create/update).
+- **`CONTRIBUTING.md` skill list expanded.** Was 4 of 10 skills; now lists all 10.
+- **`package.json` updated.** Version 2.7.0 → 2.8.2, description expanded (scoring, cold outreach, CRM management, pipeline analysis, performance review), added `scoring` npm script, added 5 keywords.
+
+### Added
+- **`YOUR_SCHEDULING_LINK` placeholder in `CLAUDE.md` Sender section.** `inbox-classifier` references this for positive-reply drafts — now it's defined in the expected location.
+- **MCP setup section in `docs/setup.md`.** New section explaining how to use MCP servers as an alternative to CLI `.env` credentials, including mixing paths.
+
+### Fixed
+- **Data leak: `output/prospect-dossiers/*.md` was not gitignored.** Prospect dossiers contain company intel. Added to `.gitignore` with `.gitkeep` preserve rule.
+
+### Unchanged
+- All `src/` TypeScript files. Tracker schema, SQLite storage, scoring engine, learnings CLI, performance math — all untouched.
+- All UI components and API routes.
+- `CHANGELOG.md` historical entries (frozen).
+
+## [2.8.1] - 2026-04-10
+
+### Added
+- **`crm-manager` skill** (10th skill) — full HubSpot CRM management from terminal. Create, edit, search, and archive contacts, deals, tasks, and notes without switching to the web UI.
+- **HubSpot CLI expanded from 8 to 17 commands.** New commands: deals (list, get, create, update, search, associate), tasks (create, list, update, associate), notes (create with contact association). `src/tools/hubspot.ts` rewritten to support 5 resource types.
+
+### Changed
+- Skill count: 9 → 10.
+
+## [2.8.0] - 2026-04-10
+
+### Added
+- **Lead scoring utility** (`src/scoring.ts`) — fit score (ICP match, 0-100) + engagement score (reply history, 0-100) → priority tier (A/B/C/D matrix). 5 CLI commands: `score`, `score-tracker`, `rank`, `tier`, `update`.
+- **Scoring config** (`knowledge/scoring-config.md`) — user-editable ICP definition: industry weights, company size ranges, job title seniority, location bonuses, tier matrix thresholds.
+- **3 new tracker columns:** `fit_score`, `engagement_score`, `priority_tier`. Schema migration via `ALTER TABLE ADD COLUMN` in `src/db.ts`.
+- **`prospect-research` skill** (8th skill) — deep intelligence gathering: company profile, funding/hiring signals, decision-maker communication style, pain-point hypotheses. Outputs dossiers to `output/prospect-dossiers/` for `cold-outreach` to consume.
+- **`cold-outreach` skill** (9th skill) — first-touch cold emails for prospects with zero prior relationship. 3 templates (signal-based, value-first, lightweight) selected by dossier availability and hypothesis confidence. Different rules than `follow-up-loop` — no "we spoke before" framing, formal by default, value-first structure.
+
+### Changed
+- Skill count: 7 → 9.
+- `follow-up-loop`, `pipeline-analysis`, and `cold-outreach` skills now use scoring to prioritize work queues (A-tier first).
+
 ## [2.7.0] - 2026-04-10
 
 ### Changed

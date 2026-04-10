@@ -1,12 +1,13 @@
 {
   "name": "hubspot-sales-agent",
-  "version": "2.7.0",
+  "version": "2.8.2",
   "type": "module",
-  "description": "Autonomous sales agent — bulk outreach, inbox classification, research-driven personalization, lead recovery. HubSpot + Gmail. Runs on any local agent harness.",
+  "description": "Autonomous sales agent — lead scoring, cold outreach, research-driven personalization, inbox classification, pipeline analysis, CRM management, and pipeline recovery. HubSpot + Gmail. Runs on any local agent harness.",
   "scripts": {
     "tracker": "tsx src/tracker.ts",
     "learnings": "tsx src/learnings.ts",
     "performance": "tsx src/performance.ts",
+    "scoring": "tsx src/scoring.ts",
     "hubspot": "tsx src/tools/hubspot.ts",
     "gmail": "tsx src/tools/gmail.ts",
     "webfetch": "tsx src/tools/webfetch.ts",
@@ -40,6 +41,11 @@
     "ai-agent",
     "crm",
     "inbox-classifier",
-    "lead-recovery"
+    "lead-recovery",
+    "lead-scoring",
+    "cold-outreach",
+    "prospect-research",
+    "pipeline-analysis",
+    "performance-review"
   ]
 }

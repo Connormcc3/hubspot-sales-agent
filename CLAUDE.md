@@ -18,6 +18,7 @@ You are an email assistant for **YOUR_NAME** at **YOUR_DOMAIN** — customize th
 - Name: YOUR_NAME
 - Email: YOUR_EMAIL
 - Company: YOUR_DOMAIN (describe your services here — e.g., "Marketing consultancy", "Sales training", "Software development", etc.)
+- Scheduling link: YOUR_SCHEDULING_LINK (e.g., your Calendly or Cal.com URL — used in positive-reply drafts by `inbox-classifier`)
 
 **Services / offering:** Describe what you sell in 1-2 sentences. This helps the agent personalize emails correctly.
 
@@ -29,8 +30,24 @@ The agent can run on two interchangeable paths — pick whichever your harness s
 
 **Path A — MCP tools (any MCP-capable harness: Claude Code, Cursor, Continue, Windsurf, custom MCP clients):**
 
-- HubSpot: `mcp__claude_ai_HubSpot__search_crm_objects`, `mcp__claude_ai_HubSpot__manage_crm_objects`
-- Gmail: `mcp__claude_ai_Gmail__gmail_create_draft`, `mcp__claude_ai_Gmail__gmail_search_messages`, `mcp__claude_ai_Gmail__gmail_read_thread`
+- HubSpot:
+  - `mcp__hubspot__search_crm_objects` — search contacts, deals, notes, tasks
+  - `mcp__hubspot__get_crm_objects` — get single object by ID
+  - `mcp__hubspot__manage_crm_objects` — create, update, archive objects
+  - `mcp__hubspot__get_properties` — list available properties/fields
+  - `mcp__hubspot__search_owners` — find HubSpot users (owners)
+  - `mcp__hubspot__get_user_details` — account info
+- Gmail:
+  - `mcp__gmail__gmail_create_draft` — create email draft
+  - `mcp__gmail__gmail_search_messages` — search inbox/messages
+  - `mcp__gmail__gmail_read_thread` — read full thread
+  - `mcp__gmail__gmail_read_message` — read single message
+- WebFetch: use your harness's built-in web fetch tool (available in Claude Code, Cursor, etc.)
+
+> **MCP tool name prefix:** The names above use a generic `mcp__hubspot__` / `mcp__gmail__` prefix.
+> Your actual prefix depends on how the MCP server is registered in your harness.
+> For example, Claude Code's hosted MCP servers use `mcp__claude_ai_HubSpot__` and `mcp__claude_ai_Gmail__`.
+> Substitute your harness's actual prefix — the function name after the prefix stays the same.
 
 **Path B — Local CLI tools (universal fallback for any harness):**
 

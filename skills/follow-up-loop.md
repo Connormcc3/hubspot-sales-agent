@@ -1,6 +1,6 @@
 # Skill: follow-up-loop
 
-> **Architecture:** One of 7 skills in the Sales Agent. See `README.md` for the overview.
+> **Architecture:** One of 10 skills in the Sales Agent. See `README.md` for the overview.
 > **Shared rules:** `CLAUDE.md` (greeting, tone, templates, signatures).
 
 ---
@@ -30,7 +30,7 @@ Before starting the loop:
 1. **Read the tracker:** `npx tsx src/tracker.ts read` → list of already-processed emails from `tracker`. This is your skip set.
 
 2. **Fetch HubSpot contacts:**
-   - **Path A (MCP):** `mcp__claude_ai_HubSpot__search_crm_objects`
+   - **Path A (MCP):** `mcp__hubspot__search_crm_objects`
      - objectType: `contacts`
      - properties: `firstname`, `lastname`, `email`, `company`, `jobtitle`, `hs_lead_status`
      - Paginate: increase `offset` until `offset >= total`
@@ -49,7 +49,7 @@ Before starting the loop:
 ## Per-Contact Loop — NEVER STOP
 
 ### Step 1 — Read notes
-- **MCP:** `mcp__claude_ai_HubSpot__search_crm_objects` with `objectType=notes`, filter by contact ID, sort `hs_timestamp DESCENDING`
+- **MCP:** `mcp__hubspot__search_crm_objects` with `objectType=notes`, filter by contact ID, sort `hs_timestamp DESCENDING`
 - **CLI:** `npx tsx src/tools/hubspot.ts notes list --contact-id <id> --limit 10`
 
 If no notes exist: generate email based on lead status only (skip Step 3).
@@ -83,7 +83,7 @@ Full rules in `CLAUDE.md`. Key points:
 - **Never invent details** — if notes are unclear, stay generic
 
 ### Step 5 — Create Gmail draft
-- **MCP:** `mcp__claude_ai_Gmail__gmail_create_draft` with `to`, `subject`, `body`, `contentType=text/plain`
+- **MCP:** `mcp__gmail__gmail_create_draft` with `to`, `subject`, `body`, `contentType=text/plain`
 - **CLI:** `npx tsx src/tools/gmail.ts draft create --to <email> --subject "..." --body "..."`
 
 Save the returned `draftId`.
