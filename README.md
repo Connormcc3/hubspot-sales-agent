@@ -60,7 +60,7 @@ The agent prints drafts to the console. Nothing was sent. Nothing was stored. Th
 
 ---
 
-## Nine Composable Skills
+## Ten Composable Skills
 
 | Skill | What It Does |
 |-------|-------------|
@@ -73,6 +73,7 @@ The agent prints drafts to the console. Nothing was sent. Nothing was stored. Th
 | **compose-reply** | Deep-context single-lead composer — assembles full email history + HubSpot data + custom new context and drafts a careful reply for one specific lead |
 | **prospect-research** | Deep intelligence gathering — company profile, recent signals, decision-maker mapping, pain-point hypotheses. Outputs structured dossiers that `cold-outreach` consumes |
 | **cold-outreach** | First-touch cold emails for prospects with zero prior relationship. Value-first framing, signal-based hooks from prospect dossiers, different rules than follow-up-loop |
+| **crm-manager** | Full HubSpot CRM management from the terminal. Create contacts, move deals through stages, assign tasks, add notes, check pipeline. No more tab-switching to HubSpot UI |
 
 Each skill is self-contained. Invoke them independently or combine them in workflows. **Monday-morning pair:** run `performance-review` first (what worked last week), then `pipeline-analysis` (what to work on next). The rest of the week runs the action skills the analysis recommended.
 
@@ -142,6 +143,15 @@ Desired outcome:
 
 Assemble full context from HubSpot + Gmail history + tracker, generate a
 brief, then draft the email. Ask me before creating the Gmail draft.
+```
+
+### Manage HubSpot from the terminal
+
+```
+Read skills/crm-manager.md.
+Create a contact for john@acme.com — John Smith, CEO at Acme Inc.
+Then create a deal "Acme Website Redesign" in the appointment scheduled stage,
+linked to that contact, amount 12000, close date end of this month.
 ```
 
 ### Research a prospect and send a cold email

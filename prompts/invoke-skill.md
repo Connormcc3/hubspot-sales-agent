@@ -1,6 +1,6 @@
 # Sales Agent — Skill Invocation
 
-> Overview of all 9 skills + how to invoke them. Each block is self-contained — copy-paste into your agent harness.
+> Overview of all 10 skills + how to invoke them. Each block is self-contained — copy-paste into your agent harness.
 >
 > **Before every invocation:** You should have `README.md` and `CLAUDE.md` loaded (or the agent reads them at the start of each skill run).
 
@@ -546,4 +546,67 @@ Show: subject, body, template used, priority tier, reasoning.
 3. A-tier leads without outreach → prospect-research + cold-outreach
 4. B-tier leads → follow-up-loop or research-outreach
 5. D-tier leads → lead-recovery to decide if worth keeping
+```
+
+---
+
+## Skill 10: crm-manager
+
+### Create a contact
+
+```
+Read skills/crm-manager.md.
+Create a contact for john@acme.com — John Smith, CEO at Acme Inc.
+Set lead status to NEW.
+```
+
+### Create a deal linked to a contact
+
+```
+Read skills/crm-manager.md.
+Create a deal "Acme Website Redesign" for john@acme.com.
+Stage: appointment scheduled. Amount: 12000. Close date: end of April.
+```
+
+### Move a deal through stages
+
+```
+Read skills/crm-manager.md.
+Move the Acme deal to proposal stage.
+```
+
+### Create a follow-up task
+
+```
+Read skills/crm-manager.md.
+Create a task: "Follow up with John about proposal" — due next Tuesday,
+linked to john@acme.com. Notes: "He asked for a case study."
+```
+
+### Pipeline overview
+
+```
+Read skills/crm-manager.md.
+Show me all pipeline stages, then list all deals currently in the
+appointment scheduled and proposal stages.
+```
+
+### Batch contact import
+
+```
+Read skills/crm-manager.md.
+Create contacts for all of these leads with status NEW:
+
+- john@acme.com, John Smith, Acme Inc, CEO
+- jane@beta.io, Jane Doe, Beta Corp, Marketing Director
+- mike@gamma.de, Mike Müller, Gamma GmbH, Founder
+
+Confirm each one before creating.
+```
+
+### Complete tasks
+
+```
+Read skills/crm-manager.md.
+Show me all open tasks. Then mark the "Follow up with John" task as completed.
 ```

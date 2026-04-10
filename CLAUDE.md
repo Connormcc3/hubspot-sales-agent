@@ -34,7 +34,7 @@ The agent can run on two interchangeable paths — pick whichever your harness s
 
 **Path B — Local CLI tools (universal fallback for any harness):**
 
-- HubSpot: `npx tsx src/tools/hubspot.ts <command>`
+- HubSpot: `npx tsx src/tools/hubspot.ts <command>` (17 commands: contacts, deals, tasks, notes, pipeline)
 - Gmail: `npx tsx src/tools/gmail.ts <command>`
 - WebFetch: `npx tsx src/tools/webfetch.ts <command>`
 

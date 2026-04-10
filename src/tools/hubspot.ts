@@ -31,7 +31,7 @@ type Handler = (opts: ParsedArgs) => Promise<void>;
 const API_BASE = 'https://api.hubapi.com';
 const TOKEN = process.env.HUBSPOT_API_TOKEN;
 
-if (!TOKEN) {
+if (!TOKEN && !process.argv.includes('--help')) {
   console.error(
     'Error: HUBSPOT_API_TOKEN not set. Copy .env.example to .env and fill in your Private App token.',
   );
@@ -213,6 +213,173 @@ async function dealsGet(opts: ParsedArgs): Promise<void> {
   console.log(JSON.stringify(data, null, 2));
 }
 
+async function contactsCreate(opts: ParsedArgs): Promise<void> {
+  const email = getString(opts, 'email');
+  if (!email) {
+    console.error('Missing --email');
+    process.exit(1);
+  }
+  const properties: Record<string, string> = { email };
+  for (const key of ['firstname', 'lastname', 'company', 'jobtitle', 'hs_lead_status']) {
+    const val = getString(opts, key);
+    if (val) properties[key] = val;
+  }
+  const data = await hubspotRequest('POST', '/crm/v3/objects/contacts', { properties });
+  console.log(JSON.stringify(data, null, 2));
+}
+
+async function contactsDelete(opts: ParsedArgs): Promise<void> {
+  const id = getString(opts, 'id');
+  if (!id) {
+    console.error('Missing --id');
+    process.exit(1);
+  }
+  await hubspotRequest('DELETE', `/crm/v3/objects/contacts/${id}`);
+  console.log(JSON.stringify({ archived: true, id }));
+}
+
+async function dealsCreate(opts: ParsedArgs): Promise<void> {
+  const name = getString(opts, 'name');
+  const stage = getString(opts, 'stage');
+  if (!name || !stage) {
+    console.error('Missing --name or --stage');
+    process.exit(1);
+  }
+  const properties: Record<string, string> = { dealname: name, dealstage: stage };
+  const amount = getString(opts, 'amount');
+  if (amount) properties.amount = amount;
+  const closedate = getString(opts, 'closedate');
+  if (closedate) properties.closedate = closedate;
+
+  const body: Record<string, unknown> = { properties };
+  const contactId = getString(opts, 'contact-id');
+  if (contactId) {
+    body.associations = [
+      {
+        to: { id: contactId },
+        types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 3 }],
+      },
+    ];
+  }
+  const data = await hubspotRequest('POST', '/crm/v3/objects/deals', body);
+  console.log(JSON.stringify(data, null, 2));
+}
+
+async function dealsUpdate(opts: ParsedArgs): Promise<void> {
+  const id = getString(opts, 'id');
+  const property = getString(opts, 'property');
+  const value = getString(opts, 'value');
+  if (!id || !property || value === undefined) {
+    console.error('Missing --id, --property, or --value');
+    process.exit(1);
+  }
+  const body = { properties: { [property]: value } };
+  const data = await hubspotRequest('PATCH', `/crm/v3/objects/deals/${id}`, body);
+  console.log(JSON.stringify(data, null, 2));
+}
+
+async function dealsSearch(opts: ParsedArgs): Promise<void> {
+  const query = getString(opts, 'query');
+  const stage = getString(opts, 'stage');
+  const limit = Number(getString(opts, 'limit') ?? '20');
+
+  const filters: unknown[] = [];
+  if (stage) {
+    filters.push({ propertyName: 'dealstage', operator: 'EQ', value: stage });
+  }
+
+  const body: Record<string, unknown> = {
+    properties: ['dealname', 'amount', 'dealstage', 'closedate', 'hs_lastmodifieddate'],
+    sorts: [{ propertyName: 'hs_lastmodifieddate', direction: 'DESCENDING' }],
+    limit,
+  };
+  if (query) body.query = query;
+  if (filters.length > 0) body.filterGroups = [{ filters }];
+
+  const data = await hubspotRequest('POST', '/crm/v3/objects/deals/search', body);
+  console.log(JSON.stringify(data, null, 2));
+}
+
+async function tasksCreate(opts: ParsedArgs): Promise<void> {
+  const title = getString(opts, 'title');
+  if (!title) {
+    console.error('Missing --title');
+    process.exit(1);
+  }
+  const properties: Record<string, string | number> = {
+    hs_task_subject: title,
+    hs_task_status: 'NOT_STARTED',
+    hs_task_type: 'TODO',
+    hs_timestamp: Date.now(),
+  };
+  const due = getString(opts, 'due');
+  if (due) properties.hs_task_remindereventtime = new Date(due).getTime();
+  const notes = getString(opts, 'notes');
+  if (notes) properties.hs_task_body = notes;
+  const owner = getString(opts, 'owner');
+  if (owner) properties.hubspot_owner_id = owner;
+
+  const body: Record<string, unknown> = { properties };
+  const contactId = getString(opts, 'contact-id');
+  if (contactId) {
+    body.associations = [
+      {
+        to: { id: contactId },
+        types: [{ associationCategory: 'HUBSPOT_DEFINED', associationTypeId: 204 }],
+      },
+    ];
+  }
+  const data = await hubspotRequest('POST', '/crm/v3/objects/tasks', body);
+  console.log(JSON.stringify(data, null, 2));
+}
+
+async function tasksList(opts: ParsedArgs): Promise<void> {
+  const limit = Number(getString(opts, 'limit') ?? '20');
+  const contactId = getString(opts, 'contact-id');
+
+  const filters: unknown[] = [];
+  if (contactId) {
+    filters.push({
+      propertyName: 'associations.contact',
+      operator: 'EQ',
+      value: contactId,
+    });
+  }
+
+  const body: Record<string, unknown> = {
+    properties: [
+      'hs_task_subject',
+      'hs_task_status',
+      'hs_task_body',
+      'hs_task_remindereventtime',
+      'hubspot_owner_id',
+    ],
+    sorts: [{ propertyName: 'hs_timestamp', direction: 'DESCENDING' }],
+    limit,
+  };
+  if (filters.length > 0) body.filterGroups = [{ filters }];
+
+  const data = await hubspotRequest('POST', '/crm/v3/objects/tasks/search', body);
+  console.log(JSON.stringify(data, null, 2));
+}
+
+async function tasksUpdate(opts: ParsedArgs): Promise<void> {
+  const id = getString(opts, 'id');
+  const status = getString(opts, 'status');
+  if (!id || !status) {
+    console.error('Missing --id or --status (COMPLETED | NOT_STARTED | IN_PROGRESS)');
+    process.exit(1);
+  }
+  const body = { properties: { hs_task_status: status } };
+  const data = await hubspotRequest('PATCH', `/crm/v3/objects/tasks/${id}`, body);
+  console.log(JSON.stringify(data, null, 2));
+}
+
+async function pipelineList(): Promise<void> {
+  const data = await hubspotRequest('GET', '/crm/v3/pipelines/deals');
+  console.log(JSON.stringify(data, null, 2));
+}
+
 const [, , resource, action, ...rest] = process.argv;
 const opts = parseArgs(rest);
 
@@ -220,15 +387,34 @@ if (!resource || resource === '--help') {
   console.log(`Usage: tsx src/tools/hubspot.ts <resource> <action> [options]
 
 Resources:
-  contacts list | search | get | update
-  notes    list | create
-  deals    list | get
+  contacts  list | search | get | create | update | delete
+  notes     list | create
+  deals     list | get | create | update | search
+  tasks     create | list | update
+  pipeline  list
 
-Examples:
-  tsx src/tools/hubspot.ts contacts list --limit 50
-  tsx src/tools/hubspot.ts contacts search --email foo@example.com
-  tsx src/tools/hubspot.ts notes list --contact-id 123
-  tsx src/tools/hubspot.ts deals list --stage open
+Contact commands:
+  contacts list [--limit N] [--offset N] [--properties p1,p2]
+  contacts search --email <email>
+  contacts get --id <contactId>
+  contacts create --email <email> [--firstname <fn>] [--lastname <ln>] [--company <co>] [--jobtitle <jt>] [--hs_lead_status <status>]
+  contacts update --id <contactId> --property <name> --value <val>
+  contacts delete --id <contactId>
+
+Deal commands:
+  deals list [--limit N] [--stage <stage>]
+  deals get --id <dealId>
+  deals create --name <dealname> --stage <dealstage> [--amount <N>] [--contact-id <id>] [--closedate <ISO>]
+  deals update --id <dealId> --property <name> --value <val>
+  deals search [--query <text>] [--stage <stage>] [--limit N]
+
+Task commands:
+  tasks create --title <title> [--contact-id <id>] [--due <ISO>] [--notes <text>] [--owner <ownerId>]
+  tasks list [--contact-id <id>] [--limit N]
+  tasks update --id <taskId> --status <COMPLETED|NOT_STARTED|IN_PROGRESS>
+
+Pipeline:
+  pipeline list
 
 Auth: Set HUBSPOT_API_TOKEN in .env (HubSpot Private App token).`);
   process.exit(0);
@@ -238,11 +424,20 @@ const routes: Record<string, Handler> = {
   'contacts:list': contactsList,
   'contacts:search': contactsSearch,
   'contacts:get': contactsGet,
+  'contacts:create': contactsCreate,
   'contacts:update': contactsUpdate,
+  'contacts:delete': contactsDelete,
   'notes:list': notesList,
   'notes:create': notesCreate,
   'deals:list': dealsList,
   'deals:get': dealsGet,
+  'deals:create': dealsCreate,
+  'deals:update': dealsUpdate,
+  'deals:search': dealsSearch,
+  'tasks:create': tasksCreate,
+  'tasks:list': tasksList,
+  'tasks:update': tasksUpdate,
+  'pipeline:list': pipelineList,
 };
 
 const handler = routes[`${resource}:${action}`];

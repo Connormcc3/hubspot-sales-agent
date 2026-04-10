@@ -26,6 +26,7 @@ Automate the outbound sales flow:
 | **compose-reply** | `skills/compose-reply.md` | Deep-context single-lead composer with full history + custom context |
 | **prospect-research** | `skills/prospect-research.md` | Deep intelligence gathering — company profile, signals, decision-maker, pain-point hypotheses. Outputs dossiers for `cold-outreach` |
 | **cold-outreach** | `skills/cold-outreach.md` | First-touch cold emails — value-first framing, uses prospect dossiers or basic data. Different rules than follow-up-loop |
+| **crm-manager** | `skills/crm-manager.md` | Full HubSpot CRM management from terminal — create/edit contacts, deals, tasks, notes. No more switching to the web UI |
 
 See `prompts/invoke-skill.md` for how to invoke each skill.
 
@@ -113,5 +114,6 @@ Each skill defines its own stopping rules:
 - **compose-reply:** ONE-SHOT — process one lead, output brief + draft, then STOP
 - **prospect-research:** Process the given lead list, then STOP (research only, no outreach)
 - **cold-outreach:** Process the given lead list, then STOP
+- **crm-manager:** Conversational — responds to individual CRM requests, no loop
 
 Refer to each skill file for the exact behavior.

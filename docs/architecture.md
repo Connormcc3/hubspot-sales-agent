@@ -17,7 +17,7 @@ flowchart TB
         Knowledge["knowledge/\n(learnings + research config)"]
     end
 
-    subgraph Skills["9 Skills"]
+    subgraph Skills["10 Skills"]
         Skill0["skills/pipeline-analysis.md"]
         Skill1["skills/performance-review.md"]
         Skill2["skills/follow-up-loop.md"]
@@ -27,6 +27,7 @@ flowchart TB
         Skill6["skills/compose-reply.md"]
         Skill7["skills/prospect-research.md"]
         Skill8["skills/cold-outreach.md"]
+        Skill9["skills/crm-manager.md"]
     end
 
     Scoring["src/scoring.ts\n(fit + engagement → tier)"]
@@ -74,7 +75,7 @@ hubspot-sales-agent/
 ├── program.md                    # Shared constraints, setup, error handling
 ├── CLAUDE.md                     # Shared email generation rules (greeting, tone, templates)
 ├── AGENTS.md                     # Harness compatibility guide
-├── skills/                       # 9 composable skills
+├── skills/                       # 10 composable skills
 │   ├── pipeline-analysis.md      # Full pipeline health check + recommendations (forward-looking)
 │   ├── performance-review.md     # Closes the feedback loop — joins drafts with outcomes, proposes Section C rules (backward-looking)
 │   ├── follow-up-loop.md         # Bulk outreach autonomous loop
@@ -83,7 +84,8 @@ hubspot-sales-agent/
 │   ├── lead-recovery.md          # Decision framework for stale deals
 │   ├── compose-reply.md          # Deep-context single-lead composer
 │   ├── prospect-research.md      # Deep intelligence gathering — dossiers for cold-outreach
-│   └── cold-outreach.md          # First-touch cold emails — value-first, signal-based hooks
+│   ├── cold-outreach.md          # First-touch cold emails — value-first, signal-based hooks
+│   └── crm-manager.md           # Full HubSpot CRM management from terminal
 ├── knowledge/                    # Living knowledge base (edit for your business)
 │   ├── learnings.md              # Living memory — skills read on every run, append at end (Section A cheat sheets, Section B running log, Section C distilled patterns)
 │   ├── research-config.md        # Define your research/audit approach
@@ -98,7 +100,7 @@ hubspot-sales-agent/
 │   ├── learnings.ts              # Learnings CLI (append heartbeat/observation to learnings.md Section B)
 │   ├── performance.ts            # Performance math (queries tracker.db via db.ts, computes per-segment contrasts → JSON for performance-review)
 │   └── tools/                    # Harness-agnostic CLI wrappers
-│       ├── hubspot.ts            # HubSpot REST API
+│       ├── hubspot.ts            # HubSpot REST API (17 commands: contacts, deals, tasks, notes, pipeline)
 │       ├── gmail.ts              # Gmail API (OAuth)
 │       └── webfetch.ts           # HTML fetch + basic audit
 ├── docs/                         # Deep-dive documentation

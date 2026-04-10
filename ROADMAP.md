@@ -59,26 +59,18 @@ The gap between *"they said yes"* and *"meeting on the calendar"* is where a mea
 
 ---
 
-## 4. CRM pipeline management beyond lead status
+## 4. ~~CRM pipeline management beyond lead status~~ — SHIPPED (v2.8)
 
-**What's missing.** Deal stage progression, task creation, structured activity logging, opportunity forecasting. The agent touches HubSpot lightly (updates `hs_lead_status`, adds notes) but doesn't manage the pipeline the way a sales manager would expect.
+**Implemented.** Full HubSpot CRM management from the terminal via `skills/crm-manager.md` + expanded `src/tools/hubspot.ts` (8 → 17 commands).
 
-**What happens today.** `inbox-classifier` is the one skill that writes to HubSpot — it updates `hs_lead_status` (e.g., `CONNECTED` → `IN_PROGRESS` on a positive reply) and adds a note with the classification. That's it. No:
+- **Contact management:** create, search, get, update any property, archive
+- **Deal management:** create (with contact association), update stage/amount/close date, search by name or stage
+- **Task management:** create (with contact association + due date), list, complete/update status
+- **Notes:** create, list (already existed)
+- **Pipeline:** list all stages with internal IDs
+- Both MCP and CLI paths supported (same dual-path pattern as all skills)
 
-- **Deal stage changes** — agent never promotes a deal from `qualifiedtobuy` → `presentationscheduled`
-- **Task creation** — no "remind Marco to follow up with Simon on Tuesday" tasks written to HubSpot
-- **Structured activity logging** — notes are freeform markdown, not typed activities with fields (call duration, meeting outcome, engagement level)
-- **Opportunity forecasting** — no "this deal's likely to close by X for $Y" signal
-
-**What it would take.**
-- Extend `src/tools/hubspot.ts` with: `deals update` (stage + amount), `tasks create`, `engagements create` for structured activity types.
-- A new skill (or an extension of `lead-recovery.md`) that suggests deal stage moves based on reply classifications and asks the human to confirm.
-- A `forecast` mode for `pipeline-analysis` that projects pipeline value × probability × time → monthly forecast. This is pure math on existing HubSpot data, no new capabilities needed.
-- More ambitious: a skill that reads HubSpot activity types and logs structured engagements (call outcome, demo attended, proposal sent) as first-class CRM events instead of plaintext notes.
-
-**Complexity.** Low-to-moderate. The HubSpot API already supports all of this — it's a matter of writing thin CLI wrappers + defining new skills that use them. No new storage, no new dependencies, no architectural changes.
-
-**Priority.** Matters if you're using the agent alongside a human sales process where the rest of the team expects HubSpot to reflect reality. Low priority if you're using it as a purely-outbound-drafting tool.
+**What's still missing.** Structured activity logging (typed engagements like calls, meetings, demos as first-class CRM events instead of freeform notes). Opportunity forecasting (pipeline value x probability x time projections).
 
 ---
 
