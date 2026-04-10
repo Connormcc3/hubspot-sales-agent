@@ -18,7 +18,7 @@ Please do **not** open a public GitHub issue for security vulnerabilities.
 ## Security Design
 
 - The agent creates **drafts only** — it cannot send emails
-- **API keys live in `.env`** and are never committed to git (enforced by `.gitignore`)
+- **Credentials (Private App tokens, OAuth secrets) live in `.env`** and are never committed to git (enforced by `.gitignore`)
 - **`tracker.db` is gitignored** (along with `table.tsv` for backwards compatibility with pre-v2.6 checkouts) to prevent leaking contact data from real campaigns
 - **Research reports** in `output/research-reports/` are gitignored
 - **Recovery analysis outputs** in `output/recovery-*.md` are gitignored

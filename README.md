@@ -34,25 +34,52 @@ git clone https://github.com/Dominien/hubspot-sales-agent.git
 cd hubspot-sales-agent && npm install
 ```
 
-**2. Add credentials** *(2 min — see [`docs/setup.md`](docs/setup.md) for the full walkthrough)*
-```bash
-cp .env.example .env
-# Fill in HUBSPOT_API_TOKEN and 3 Google OAuth vars
-```
+**Choose your path:**
 
-**3. Verify** *(30 sec)*
-```bash
-npx tsx src/tracker.ts read    # prints [] → ready
-```
+### Path A — MCP (recommended, fastest)
 
-**4. Run your first skill in PREVIEW mode** *(1 min)*
+If your harness supports MCP (Claude Code, Cursor, Continue, Windsurf):
 
-Paste into your Claude Code session:
+**2a. Connect MCP servers** *(1 min)*
+- Add the **HubSpot MCP server** and **Gmail MCP server** in your harness settings
+- Auth is handled by the MCP servers — no `.env` file needed
+
+**3a. Run your first skill in PREVIEW mode** *(1 min)*
+
+Paste into your agent session:
 
 ```
 Read skills/follow-up-loop.md and CLAUDE.md in PREVIEW MODE.
 Process max 5 contacts — show me each draft, no Gmail calls, no tracker writes.
 ```
+
+### Path B — CLI (universal fallback)
+
+If your harness doesn't support MCP, or you prefer debugging via terminal:
+
+**2b. Add credentials** *(2 min — see [`docs/setup.md`](docs/setup.md) for the full walkthrough)*
+```bash
+cp .env.example .env
+# Fill in your HubSpot Private App token (pat-xxx) and 3 Google OAuth vars
+```
+
+> **Note:** HubSpot deprecated API keys. You need a **Private App token** — create one at HubSpot Settings → Integrations → Private Apps. See [`docs/setup.md`](docs/setup.md) for the full walkthrough.
+
+**3b. Verify** *(30 sec)*
+```bash
+npx tsx src/tracker.ts read    # prints [] → ready
+```
+
+**4b. Run your first skill in PREVIEW mode** *(1 min)*
+
+Paste into your agent session:
+
+```
+Read skills/follow-up-loop.md and CLAUDE.md in PREVIEW MODE.
+Process max 5 contacts — show me each draft, no Gmail calls, no tracker writes.
+```
+
+---
 
 **5. Review** *(30 sec)*
 
