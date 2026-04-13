@@ -336,3 +336,4 @@ See [`SECURITY.md`](SECURITY.md) for reporting vulnerabilities.
 ## License
 
 [MIT](LICENSE) — Marco Patzelt
+
