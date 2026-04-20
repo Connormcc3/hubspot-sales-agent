@@ -63,6 +63,11 @@ Track observations about when casual vs. formal greetings work for your market:
 
 <!-- LEARNINGS_LOG_START -->
 
+### 2026-04-16 · cold-outreach · Super Lawyers SoCal batch — personalized opener + attorney-control framing
+- **Context:** 60 Southern California attorneys from Super Lawyers Outreach list. All formal tone (legal profession override). Mix of Family Law (30), Estate & Trust Litigation (13), Estate Planning & Probate (12), Elder Law (4). 36 unique firms.
+- **Observed:** Connor rejected AI-forward framing and long drafts. 3-4 sentences with firm-name+practice-area opener performed best in review. One data quality issue: Scott Grossman (grossmanjustice.com) listed as Estate & Trust Litigation in HubSpot but website is personal injury firm in NJ — flagged as mismatch, fell back to generic.
+- **Apply next time:** Cold outreach to attorneys: (1) Never lead with AI framing — attorneys distrust AI efficacy. Frame Percheron as outcome (saves time on fact-finding, drafting, form-filling) with attorney staying in driver's seat. (2) Always open with firm name + specific practice-area reference. (3) 3-4 sentences max. (4) Verify website matches HubSpot practice area before personalizing deeply — mismatch = fall back to generic hook.
+
 <!-- LEARNINGS_LOG_END -->
 
 ---

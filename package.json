@@ -11,13 +11,16 @@
     "hubspot": "tsx src/tools/hubspot.ts",
     "gmail": "tsx src/tools/gmail.ts",
     "webfetch": "tsx src/tools/webfetch.ts",
+    "enrichment": "tsx src/enrichment.ts",
     "typecheck": "tsc --noEmit",
     "ui:dev": "cd ui && npm run dev",
     "ui:build": "cd ui && npm run build",
     "ui:install": "cd ui && npm install"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.90.0",
     "better-sqlite3": "^12.8.0",
+    "csv-parse": "^6.2.1",
     "dotenv": "^16.4.5"
   },
   "devDependencies": {

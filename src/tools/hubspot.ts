@@ -14,73 +14,34 @@
  *   tsx src/tools/hubspot.ts notes create --contact-id <contactId> --body "<text>"
  *   tsx src/tools/hubspot.ts deals list [--limit N] [--stage <stage>]
  *   tsx src/tools/hubspot.ts deals get --id <dealId>
+ *   tsx src/tools/hubspot.ts lists list [--limit N]
+ *   tsx src/tools/hubspot.ts lists get --id <listId>
+ *   tsx src/tools/hubspot.ts lists members --id <listId> [--limit N]
+ *   tsx src/tools/hubspot.ts lists add --id <listId> --contact-ids <id1,id2>
+ *   tsx src/tools/hubspot.ts lists remove --id <listId> --contact-ids <id1,id2>
  *
  * Auth: Set HUBSPOT_API_TOKEN in .env (HubSpot Private App token, starts with "pat-").
  */
 
-import 'dotenv/config';
-
-type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
-
-interface ParsedArgs {
-  [key: string]: string | true | undefined;
-}
+import {
+  type ParsedArgs,
+  createHubSpotRequest,
+  getHubSpotToken,
+  parseArgs,
+  getString,
+} from '../lib/hubspot-api.ts';
 
 type Handler = (opts: ParsedArgs) => Promise<void>;
 
-const API_BASE = 'https://api.hubapi.com';
-const TOKEN = process.env.HUBSPOT_API_TOKEN;
-
-if (!TOKEN && !process.argv.includes('--help')) {
-  console.error(
-    'Error: HUBSPOT_API_TOKEN not set. Copy .env.example to .env and fill in your Private App token.',
-  );
-  process.exit(1);
-}
-
-const baseHeaders: Record<string, string> = {
-  Authorization: `Bearer ${TOKEN}`,
-  'Content-Type': 'application/json',
-};
-
-async function hubspotRequest<T = unknown>(
-  method: HttpMethod,
-  path: string,
-  body: unknown = null,
-): Promise<T> {
-  const init: RequestInit = { method, headers: baseHeaders };
-  if (body) init.body = JSON.stringify(body);
-
-  const res = await fetch(`${API_BASE}${path}`, init);
-  const text = await res.text();
-
-  if (!res.ok) {
-    console.error(`HubSpot API error [${res.status}]: ${text}`);
+let hubspotRequest: ReturnType<typeof createHubSpotRequest>;
+if (!process.argv.includes('--help')) {
+  try {
+    const token = getHubSpotToken();
+    hubspotRequest = createHubSpotRequest(token);
+  } catch (err) {
+    console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
     process.exit(1);
   }
-
-  if (!text) return {} as T;
-  return JSON.parse(text) as T;
-}
-
-function parseArgs(args: string[]): ParsedArgs {
-  const parsed: ParsedArgs = {};
-  for (let i = 0; i < args.length; i++) {
-    const a = args[i];
-    if (a.startsWith('--')) {
-      const key = a.slice(2);
-      const next = args[i + 1];
-      const val: string | true = next && !next.startsWith('--') ? next : true;
-      parsed[key] = val;
-      if (val !== true) i++;
-    }
-  }
-  return parsed;
-}
-
-function getString(opts: ParsedArgs, key: string): string | undefined {
-  const v = opts[key];
-  return typeof v === 'string' ? v : undefined;
 }
 
 async function contactsList(opts: ParsedArgs): Promise<void> {
@@ -375,6 +336,74 @@ async function tasksUpdate(opts: ParsedArgs): Promise<void> {
   console.log(JSON.stringify(data, null, 2));
 }
 
+async function listsList(opts: ParsedArgs): Promise<void> {
+  const limit = getString(opts, 'limit') ?? '25';
+  const offset = getString(opts, 'offset');
+  const params = new URLSearchParams({ limit });
+  if (offset) params.set('offset', offset);
+  const data = await hubspotRequest('GET', `/crm/v3/lists/?${params}`);
+  console.log(JSON.stringify(data, null, 2));
+}
+
+async function listsGet(opts: ParsedArgs): Promise<void> {
+  const id = getString(opts, 'id');
+  if (!id) {
+    console.error('Missing --id');
+    process.exit(1);
+  }
+  const data = await hubspotRequest('GET', `/crm/v3/lists/${id}`);
+  console.log(JSON.stringify(data, null, 2));
+}
+
+async function listsMembers(opts: ParsedArgs): Promise<void> {
+  const id = getString(opts, 'id');
+  if (!id) {
+    console.error('Missing --id');
+    process.exit(1);
+  }
+  const limit = getString(opts, 'limit') ?? '100';
+  const after = getString(opts, 'after');
+  const params = new URLSearchParams({ limit });
+  if (after) params.set('after', after);
+  const data = await hubspotRequest(
+    'GET',
+    `/crm/v3/lists/${id}/memberships?${params}`,
+  );
+  console.log(JSON.stringify(data, null, 2));
+}
+
+async function listsAdd(opts: ParsedArgs): Promise<void> {
+  const id = getString(opts, 'id');
+  const contactIds = getString(opts, 'contact-ids');
+  if (!id || !contactIds) {
+    console.error('Missing --id or --contact-ids (comma-separated)');
+    process.exit(1);
+  }
+  const body = contactIds.split(',').map(Number);
+  const data = await hubspotRequest(
+    'PUT',
+    `/crm/v3/lists/${id}/memberships/add`,
+    body,
+  );
+  console.log(JSON.stringify(data, null, 2));
+}
+
+async function listsRemove(opts: ParsedArgs): Promise<void> {
+  const id = getString(opts, 'id');
+  const contactIds = getString(opts, 'contact-ids');
+  if (!id || !contactIds) {
+    console.error('Missing --id or --contact-ids (comma-separated)');
+    process.exit(1);
+  }
+  const body = contactIds.split(',').map(Number);
+  const data = await hubspotRequest(
+    'PUT',
+    `/crm/v3/lists/${id}/memberships/remove`,
+    body,
+  );
+  console.log(JSON.stringify(data, null, 2));
+}
+
 async function pipelineList(): Promise<void> {
   const data = await hubspotRequest('GET', '/crm/v3/pipelines/deals');
   console.log(JSON.stringify(data, null, 2));
@@ -391,6 +420,7 @@ Resources:
   notes     list | create
   deals     list | get | create | update | search
   tasks     create | list | update
+  lists     list | get | members | add | remove
   pipeline  list
 
 Contact commands:
@@ -412,6 +442,13 @@ Task commands:
   tasks create --title <title> [--contact-id <id>] [--due <ISO>] [--notes <text>] [--owner <ownerId>]
   tasks list [--contact-id <id>] [--limit N]
   tasks update --id <taskId> --status <COMPLETED|NOT_STARTED|IN_PROGRESS>
+
+List commands:
+  lists list [--limit N] [--offset N]
+  lists get --id <listId>
+  lists members --id <listId> [--limit N] [--after <cursor>]
+  lists add --id <listId> --contact-ids <id1,id2,...>
+  lists remove --id <listId> --contact-ids <id1,id2,...>
 
 Pipeline:
   pipeline list
@@ -437,6 +474,11 @@ const routes: Record<string, Handler> = {
   'tasks:create': tasksCreate,
   'tasks:list': tasksList,
   'tasks:update': tasksUpdate,
+  'lists:list': listsList,
+  'lists:get': listsGet,
+  'lists:members': listsMembers,
+  'lists:add': listsAdd,
+  'lists:remove': listsRemove,
   'pipeline:list': pipelineList,
 };
 

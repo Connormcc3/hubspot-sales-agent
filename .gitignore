@@ -36,6 +36,14 @@ output/performance/*.md
 !output/prospect-dossiers/.gitkeep
 !output/performance/.gitkeep
 
+# Leads pipeline (enrichment agent)
+leads/inbox/*
+leads/processed/*
+leads/errors/*
+!leads/inbox/.gitkeep
+!leads/processed/.gitkeep
+!leads/errors/.gitkeep
+
 # Editor
 .DS_Store
 .vscode/
